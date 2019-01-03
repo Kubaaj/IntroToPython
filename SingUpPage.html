@@ -42,7 +42,7 @@ input[type=text], input[type=password] {
 
 
 
-input[type = submit] {
+button {
   background-color: #B9090B;
   color: white;
   padding: 14px 20px;
@@ -93,36 +93,34 @@ label {
   <h1> JJVideo </h1>
 
   <div class="form">
-    <form method = "POST">
+    <form method = POST>
       <div class="container">
-        <h2>Sign In</h2>
+        <h2>Sign Up</h2>
+
         % if error:
         <div class="error" style=background-color:#ff9900>
             {{ error }}
         </div>
         % end
 
+        <label for="login_name"><b>Name</b></label>
+        <input type="text" placeholder="Enter Name" name="name" required>
+
         <label for="login_name"><b>Email</b></label>
-        <input type="text" placeholder="Enter Email" name="login_name" >
+        <input type="text" placeholder="Enter Email" name="login_name" required>
 
         <label for="password"><b>Password</b></label>
-        <input type="password" placeholder="Enter Password" name="password" >
+        <input type="password" placeholder="Enter Password" name="password" required>
 
-        <a href="#" class="frgt">Forgot your email or password?</a>
+        <label for="password"><b>Repeat Password</b></label>
+        <input type="password" placeholder="Repeat Password" name="rep_password" required>
 
-        <label for = "remember">
-          <input type="checkbox" checked="checked" name="remember"> Remember me on this device
-        </label>
-        <input  type = "submit" value="Sign In" name = "signin">
 
-      </div>
-
-      <div class="container" style="background-color:#f1f1f1">
-        <h2>Don't have account yet? </h2>
-
-        <input type = "submit" value="Sign Up" name = "signup">
+        <button type="submit">Sign Up</button>
 
       </div>
+
+
     </form>
   </div>
 </body>
