@@ -4,6 +4,7 @@ import random
 import string
 import logging
 import logging.handlers
+import datetime
 
 from users import users
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
@@ -19,38 +20,60 @@ def login_page(error = None):
     return template('LoginPage.html', error=error)
 
 
-# @route('/login', method='POST')
-# def do_login():
-#     error = None
-#     username = request.forms.get('uname')
-#     password = request.forms.get('psw')
-#     if check_login(username, password):
-#         return(main_page(username))
-#     else:
-#         error = 'Invalid Credentials. Please try again.'
-#     return login_page(error)
-
 
 @route('/login', method='POST')
 def login():
+    if request.forms.get('signin', default=False):
+        error = None
+        loginName = request.forms.get('login_name', default=False)
+        password = request.forms.get('password', default=False)
+        randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
+        log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
+        if (loginName in users) and users[loginName]["password"] == password:
+            ts = None
+            if request.forms.get('remember'): ts = datetime.datetime.now()+datetime.timedelta(days=1)
+            response.set_cookie("user", loginName, secret=secretKey, expires = ts)
+            response.set_cookie("randStr", randStr, secret=secretKey, expires = ts)
+            users[loginName]["loggedIn"] = True
+            users[loginName]["randStr"] = randStr
+            users[loginName]["lastSeen"] = time.time()
+
+            redirect('/index')
+            return True
+        else:
+            error = 'Invalid Credentials. Please try again.'
+        return login_page(error)
+    else:
+        redirect('/signup')
+        return False
+
+
+@route('/signup')
+def signup_page(error = None):
+    return template('SingUpPage.html', error=error)
+
+
+
+@route('/signup', method='POST')
+def signup():
     error = None
+    name = request.forms.get('name', default=False)
     loginName = request.forms.get('login_name', default=False)
     password = request.forms.get('password', default=False)
+    repPassword = request.forms.get('rep_password', default=False)
+
     randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
     log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
-    if (loginName in users) and users[loginName]["password"] == password:
-        response.set_cookie("user", loginName, secret=secretKey)
-        response.set_cookie("randStr", randStr, secret=secretKey)
-        users[loginName]["loggedIn"] = True
-        users[loginName]["randStr"] = randStr
-        users[loginName]["lastSeen"] = time.time()
-
-        redirect('/index')
-        return True
+    if (loginName in users):
+        error = "Account for this email address already exists"
+    elif password != repPassword:
+        error = "Passwords do not match"
     else:
-        error = 'Invalid Credentials. Please try again.'
-    return login_page(error)
-
+        user_data = {"name":name, "password":password, "email":loginName, "loggedIn":False,  "randStr":"", "lastSeen":0}
+        users[loginName] = user_data
+        redirect('/login')
+        return True
+    return signup_page(error)
 
 
 @route('/')
@@ -71,11 +94,6 @@ def checkAuth():
         return loginName
     return redirect('/login')
 
-
-#
-#
-# def check_login(username, password):
-#     return(username in users and users[username] == password)
 
 
 run(host='localhost', port=8080, debug=True)
