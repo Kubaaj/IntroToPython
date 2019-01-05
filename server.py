@@ -48,6 +48,13 @@ def login():
         return False
 
 
+@route('/signout')
+def signout():
+        loginName = checkAuth()
+        users[loginName]["loggedIn"] = False
+        redirect("/index")
+
+
 @route('/signup')
 def signup_page(error = None):
     return template('SingUpPage.html', error=error)
