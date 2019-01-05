@@ -1,0 +1,90 @@
+CREATE TABLE `Movies` (
+	`MovieId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`Title`	TEXT NOT NULL,
+	`Price`	REAL NOT NULL,
+	`Adult`	NUMERIC,
+	`Budget`	INTEGER,
+	`ImdbId`	INTEGER,
+	`Popularity`	INTEGER,
+	`ReleaseDate`	NUMERIC,
+	`Revenue`	INTEGER,
+	`Runtime`	INTEGER,
+	`VoteAverage`	REAL,
+	`VoteCount`	INTEGER
+);
+
+
+CREATE TABLE `ProductionCountries` (
+	`ProductionCountryId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`MovieId`	INTEGER NOT NULL,
+	`CountryId`	INTEGER NOT NULL
+);
+
+
+
+CREATE TABLE `Countries` (
+	`CountryId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`CountryName`	TEXT NOT NULL
+);
+
+
+
+CREATE TABLE `Genres` (
+	`GenreId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`GenreName`	TEXT NOT NULL
+);
+
+CREATE TABLE `MovieGenres` (
+	`MovieGenreId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`MovieId`	INTEGER NOT NULL,
+	`GenreId`	INTEGER NOT NULL
+);
+
+CREATE TABLE `MoviesKeywords` (
+	`MovieKeywordId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`MovieId`	INTEGER NOT NULL,
+	`KeywordId`	INTEGER NOT NULL
+);
+
+
+
+CREATE TABLE `Keywords` (
+	`KeywordId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`Keyword`	TEXT
+);
+
+
+
+CREATE TABLE `Rentals` (
+	`RentalId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`MovieId`	INTEGER NOT NULL,
+	`UserId`	INTEGER NOT NULL,
+	`RentalDate`	TEXT
+);
+
+
+
+CREATE TABLE `Users` (
+	`UserId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`Login`	TEXT NOT NULL UNIQUE,
+	`Password`	TEXT NOT NULL
+);
+
+
+
+CREATE TABLE `Ratings` (
+	`RatingId`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`MovieId`	INTEGER NOT NULL,
+	`UserId`	INTEGER NOT NULL,
+	`Rating`	INTEGER NOT NULL,
+	`Timestamp`	INTEGER
+);
+
+
+CREATE TABLE Posters (
+    PosterMovieId INTEGER PRIMARY KEY
+                          NOT NULL
+                          UNIQUE,
+    MovieId       INTEGER,
+    PosterPath    VARCHAR
+);
