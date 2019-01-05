@@ -6,6 +6,8 @@ import logging
 import logging.handlers
 import datetime
 
+
+
 from users import users
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
 log = logging.getLogger('bottle')
@@ -31,9 +33,11 @@ def login():
         log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
         if (loginName in users) and users[loginName]["password"] == password:
             ts = None
-            if request.forms.get('remember'): ts = datetime.datetime.now()+datetime.timedelta(days=1)
-            response.set_cookie("user", loginName, secret=secretKey, expires = ts)
-            response.set_cookie("randStr", randStr, secret=secretKey, expires = ts)
+            if request.forms.get('remember'):
+                ts = datetime.datetime.now()+datetime.timedelta(days=1)
+            else:
+                response.set_cookie("user", loginName, secret=secretKey)
+                response.set_cookie("randStr", randStr, secret=secretKey)
             users[loginName]["loggedIn"] = True
             users[loginName]["randStr"] = randStr
             users[loginName]["lastSeen"] = time.time()
@@ -71,6 +75,7 @@ def signup():
     else:
         user_data = {"name":name, "password":password, "email":loginName, "loggedIn":False,  "randStr":"", "lastSeen":0}
         users[loginName] = user_data
+        print(users[loginName])
         redirect('/login')
         return True
     return signup_page(error)
@@ -82,6 +87,25 @@ def main_page():
     loginName = checkAuth()
     userName = users[loginName]["name"]
     return template('MainPage.html',username = userName)
+
+
+@route("/forgot")
+def forgot_page(error = None):
+    return template('ForgotPassword.html', error=error)
+
+@route('/forgot', method='POST')
+def reset():
+        error = None
+        loginName = request.forms.get('login_name', default=False)
+        if (loginName in users):
+            random_password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            users[loginName]["password"] =  random_password
+            print(random_password)
+            redirect("/index")
+        else:
+            error =  "Account for this email does not exists"
+        return forgot_page(error)
+
 
 
 def checkAuth():
