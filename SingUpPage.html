@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: black;
+      color: #B9090B
+  }
+
+form {
+      border: 3px solid #f1f1f1;
+      background-color: white;
+      color: black;
+      display: inline-block;
+      margin-left: 15px;
+      margin-right: 15px;
+      text-align: left;
+      max-width:500px;
+      border-radius: 5px;
+  }
+
+div.form{
+          display: block;
+          text-align: center;
+
+      }
+
+
+
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  border-radius: 5px;
+}
+
+
+
+button {
+  background-color: #B9090B;
+  color: white;
+  padding: 14px 20px;
+  margin: 15px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+label {
+  clear: both;
+  float:left;
+  padding: 5px
+}
+
+.container {
+  padding: 25px;
+}
+
+
+.error{
+  padding: 15px;
+  color: white;
+  font-size: small;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.frgt{
+  float: right;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-decoration: none;
+  color: #00bcf9;
+}
+
+</style>
+</head>
+
+<body>
+
+  <h1> JJVideo </h1>
+
+  <div class="form">
+    <form method = POST>
+      <div class="container">
+        <h2>Sign Up</h2>
+
+        % if error:
+        <div class="error" style=background-color:#ff9900>
+            {{ error }}
+        </div>
+        % end
+
+        <label for="login_name"><b>Name</b></label>
+        <input type="text" placeholder="Enter Name" name="name" required>
+
+        <label for="login_name"><b>Email</b></label>
+        <input type="text" placeholder="Enter Email" name="login_name" required>
+
+        <label for="password"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" required>
+
+        <label for="password"><b>Repeat Password</b></label>
+        <input type="password" placeholder="Repeat Password" name="rep_password" required>
+
+
+        <button type="submit">Sign Up</button>
+
+      </div>
+
+
+    </form>
+  </div>
+</body>
+
+</html>
