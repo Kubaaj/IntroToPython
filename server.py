@@ -97,6 +97,9 @@ def signup():
 @route('/')
 @route('/index')
 def main_page():
+    loginName = checkAuth()
+    userName = users[loginName]["name"]
+    
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     c.execute("Create View BestFilms AS SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId WHERE VoteCount > 1050 AND VoteCount IS NOT NULL ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 6;")
@@ -119,11 +122,70 @@ def main_page():
     best6=c.fetchone()
     best6_2 = 'https://image.tmdb.org/t/p/w185' + best6[0]
     c.execute("DROP VIEW BestFilms;")
+    
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1;", (loginName,))
+    rent1=c.fetchone()
+    if rent1 == None:
+        rent1_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent1_2 = 'https://image.tmdb.org/t/p/w185' + rent1[0]
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1 OFFSET 1;", (loginName,))
+    rent2=c.fetchone()
+    if rent2 == None:
+        rent2_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent2_2 = 'https://image.tmdb.org/t/p/w185' + rent2[0]
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1 OFFSET 2;", (loginName,))
+    rent3=c.fetchone()
+    if rent3 == None:
+        rent3_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent3_2 = 'https://image.tmdb.org/t/p/w185' + rent3[0]
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1 OFFSET 3;", (loginName,))
+    rent4=c.fetchone()
+    if rent4 == None:
+        rent4_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent4_2 = 'https://image.tmdb.org/t/p/w185' + rent4[0]
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1 OFFSET 4;", (loginName,))
+    rent5=c.fetchone()
+    if rent5 == None:
+        rent5_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent5_2 = 'https://image.tmdb.org/t/p/w185' + rent5[0]
+    c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1 OFFSET 5;", (loginName,))
+    rent6=c.fetchone()
+    if rent6 == None:
+        rent6_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    else:
+        rent6_2 = 'https://image.tmdb.org/t/p/w185' + rent6[0]
+    
+        conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("Create View PopularFilms AS SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId ORDER BY Pop DESC LIMIT 6;")
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1;")
+    pop1=c.fetchone()
+    pop1_2 = 'https://image.tmdb.org/t/p/w185' + pop1[0]
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1 OFFSET 1;")
+    pop2=c.fetchone()
+    pop2_2 = 'https://image.tmdb.org/t/p/w185' + pop2[0]
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1 OFFSET 2;")
+    pop3=c.fetchone()
+    pop3_2 = 'https://image.tmdb.org/t/p/w185' + pop3[0]
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1 OFFSET 3;")
+    pop4=c.fetchone()
+    pop4_2 = 'https://image.tmdb.org/t/p/w185' + pop4[0]
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1 OFFSET 4;")
+    pop5=c.fetchone()
+    pop5_2 = 'https://image.tmdb.org/t/p/w185' + pop5[0]
+    c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1 OFFSET 5;")
+    pop6=c.fetchone()
+    pop6_2 = 'https://image.tmdb.org/t/p/w185' + pop6[0]
+    c.execute("DROP VIEW PopularFilms;")
+    
     conn.commit()
     conn.close()
-    loginName = checkAuth()
-    userName = users[loginName]["name"]
-    return template('MainPage.html',username = userName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2)
+    return template('MainPage.html',username = userName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
 
 
 @route("/forgot")
