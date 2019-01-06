@@ -5,7 +5,7 @@ import string
 import logging
 import logging.handlers
 import datetime
-
+import sqlite3
 
 
 from users import users
@@ -38,6 +38,12 @@ def login():
             else:
                 response.set_cookie("user", loginName, secret=secretKey)
                 response.set_cookie("randStr", randStr, secret=secretKey)
+                conn = sqlite3.connect('jjmovie.db')
+                c = conn.cursor()
+                c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
+
+                conn.commit()
+                conn.close()
             users[loginName]["loggedIn"] = True
             users[loginName]["randStr"] = randStr
             users[loginName]["lastSeen"] = time.time()
@@ -91,9 +97,33 @@ def signup():
 @route('/')
 @route('/index')
 def main_page():
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("Create View BestFilms AS SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId WHERE VoteCount > 1050 AND VoteCount IS NOT NULL ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 6;")
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1;")
+    best1=c.fetchone()
+    best1_2 = 'https://image.tmdb.org/t/p/w185' + best1[0]
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1 OFFSET 1;")
+    best2=c.fetchone()
+    best2_2 = 'https://image.tmdb.org/t/p/w185' + best2[0]
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1 OFFSET 2;")
+    best3=c.fetchone()
+    best3_2 = 'https://image.tmdb.org/t/p/w185' + best3[0]
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1 OFFSET 3;")
+    best4=c.fetchone()
+    best4_2 = 'https://image.tmdb.org/t/p/w185' + best4[0]
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1 OFFSET 4;")
+    best5=c.fetchone()
+    best5_2 = 'https://image.tmdb.org/t/p/w185' + best5[0]
+    c.execute("SELECT PosterPath FROM BestFilms LIMIT 1 OFFSET 5;")
+    best6=c.fetchone()
+    best6_2 = 'https://image.tmdb.org/t/p/w185' + best6[0]
+    c.execute("DROP VIEW BestFilms;")
+    conn.commit()
+    conn.close()
     loginName = checkAuth()
     userName = users[loginName]["name"]
-    return template('MainPage.html',username = userName)
+    return template('MainPage.html',username = userName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2)
 
 
 @route("/forgot")
