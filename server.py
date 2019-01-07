@@ -9,7 +9,6 @@ import sqlite3
 import cgi
 
 
-from users import users
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
 log = logging.getLogger('bottle')
 log.setLevel('INFO')
@@ -32,27 +31,36 @@ def login():
         password = request.forms.get('password', default=False)
         randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
         log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
-        if (loginName in users) and users[loginName]["password"] == password:
+        
+        conn = sqlite3.connect('jjmovie.db')
+        c = conn.cursor()
+        c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginPairExists FROM users WHERE Login = ? AND Password = ? LIMIT 1", (loginName, password))
+        credsCorrect = c.fetchone()[0] == 1  
+        
+        if credsCorrect:
             ts = None
             if request.forms.get('remember'):
                 ts = datetime.datetime.now()+datetime.timedelta(days=1)
+                response.set_cookie("user", loginName, secret=secretKey, expires = ts )
+                response.set_cookie("randStr", randStr, secret=secretKey, expires = ts)
             else:
                 response.set_cookie("user", loginName, secret=secretKey)
                 response.set_cookie("randStr", randStr, secret=secretKey)
-                conn = sqlite3.connect('jjmovie.db')
-                c = conn.cursor()
-                c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
 
-                conn.commit()
-                conn.close()
-            users[loginName]["loggedIn"] = True
-            users[loginName]["randStr"] = randStr
-            users[loginName]["lastSeen"] = time.time()
+            c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
+            c.execute("UPDATE Users SET LoggedIn = 1 WHERE Login = ?", (loginName,))
+            c.execute("UPDATE Users SET RandStr = ? WHERE Login = ?", (randStr,loginName))
+            c.execute("SELECT * FROM users WHERE Login = ? LIMIT 1", (loginName, ))
+
+            conn.commit()
+            conn.close()
 
             redirect('/index')
             return True
         else:
             error = 'Invalid Credentials. Please try again.'
+        conn.commit()
+        conn.close()
         return login_page(error)
     else:
         redirect('/signup')
@@ -62,9 +70,12 @@ def login():
 @route('/signout')
 def signout():
         loginName = checkAuth()
-        users[loginName]["loggedIn"] = False
+        conn = sqlite3.connect('jjmovie.db')
+        c = conn.cursor()
+        c.execute("UPDATE Users SET LoggedIn = 0 WHERE Login = ?", (loginName,))
+        conn.commit()
+        conn.close()
         redirect("/index")
-
 
 @route('/signup')
 def signup_page(error = None):
@@ -89,7 +100,7 @@ def signup():
     else:
         user_data = {"name":name, "password":password, "email":loginName, "loggedIn":False,  "randStr":"", "lastSeen":0}
         users[loginName] = user_data
-        print(users[loginName])
+
         redirect('/login')
         return True
     return signup_page(error)
@@ -273,7 +284,7 @@ def reset():
         if (loginName in users):
             random_password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
             users[loginName]["password"] =  random_password
-            print(random_password)
+
             redirect("/index")
         else:
             error =  "Account for this email does not exists"
@@ -284,10 +295,21 @@ def reset():
 def checkAuth():
     loginName = request.get_cookie("user", secret=secretKey)
     randStr = request.get_cookie("randStr", secret=secretKey)
-    log.info(str(loginName) + ' ' + request.method + ' ' +
-             request.url + ' ' + request.environ.get('REMOTE_ADDR'))
-    if (loginName in users) and (users[loginName].get("randStr", "") == randStr) and (users[loginName]["loggedIn"] == True) and (time.time() - users[loginName]["lastSeen"] < 3600):
-        users[loginName]["lastSeen"] = time.time()
+    log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
+
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE Login = ? LIMIT 1", (loginName, ))
+
+    c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS IsAuth FROM users WHERE Login = ? AND RandStr = ? AND LoggedIn == 1 AND LastSeen > ?  LIMIT 1", (loginName, randStr, time.time() - 3600 ))
+    IsAuth = c.fetchone()[0] == 1
+
+
+    # (loginName in users) and (users[loginName].get("randStr", "") == randStr) and (users[loginName]["loggedIn"] == True) and (time.time() - users[loginName]["lastSeen"] < 3600)
+    if IsAuth:
+        c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
+        conn.commit()
+        conn.close()
         return loginName
     return redirect('/login')
 
