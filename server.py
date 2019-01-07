@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import datetime
 import sqlite3
+import cgi
 
 
 from users import users
@@ -102,7 +103,16 @@ def main_page():
     
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
-    c.execute("Create View BestFilms AS SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId WHERE VoteCount > 1050 AND VoteCount IS NOT NULL ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 6;")
+    sql = """
+        CREATE VIEW BestFilms AS 
+        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL 
+        ORDER BY VoteAverage DESC, VoteCount DESC 
+        LIMIT 6;
+    """
+    c.execute(str(sql))
     c.execute("SELECT PosterPath FROM BestFilms LIMIT 1;")
     best1=c.fetchone()
     best1_2 = 'https://image.tmdb.org/t/p/w185' + best1[0]
@@ -162,7 +172,15 @@ def main_page():
     
         conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
-    c.execute("Create View PopularFilms AS SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId ORDER BY Pop DESC LIMIT 6;")
+    sql = """
+        CREATE VIEW PopularFilms AS 
+        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        ORDER BY Pop DESC 
+        LIMIT 6;    
+    """
+    c.execute(str(sql))
     c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1;")
     pop1=c.fetchone()
     pop1_2 = 'https://image.tmdb.org/t/p/w185' + pop1[0]
@@ -187,6 +205,62 @@ def main_page():
     conn.close()
     return template('MainPage.html',username = userName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
 
+
+@route('/index', method='POST')
+def mainPageSearch():
+    if request.forms.get('gosearch', default=False):
+        redirect('/search')
+    
+    
+    
+@route('/search')
+def search():
+    loginName = checkAuth()
+    userName = users[loginName]["name"]
+    
+    #form = cgi.FieldStorage()
+    #searchString =  form.getvalue('searchbox')
+    searchString = "PIRATE"
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Popularity, m.VoteAverage, p.PosterPath,
+        CASE 
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
+              ELSE 3 END) 
+        END AS SearchValue 
+
+        FROM Movies m
+        LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
+        LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
+        LEFT JOIN MovieGenres mg ON m.MovieId = mg.MovieId
+        LEFT JOIN Genres g ON mg.GenreId = g.GenreId
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?)
+        ORDER BY SearchValue DESC, CAST(m.Popularity AS INT) DESC, CAST(m.VoteAverage AS INT)  DESC LIMIT 20;
+    """
+    c.execute(str(sql), (searchString, searchString, searchString, searchString, searchString,))
+    s1=c.fetchall()
+    s1_1 = 'https://image.tmdb.org/t/p/w185' + str(s1[0][4])
+    s1_2 = 'https://image.tmdb.org/t/p/w185' + str(s1[1][4])
+    s1_3 = 'https://image.tmdb.org/t/p/w185' + str(s1[2][4])
+    s1_4 = 'https://image.tmdb.org/t/p/w185' + str(s1[3][4])
+    s1_5 = 'https://image.tmdb.org/t/p/w185' + str(s1[4][4])
+    s1_6 = 'https://image.tmdb.org/t/p/w185' + str(s1[5][4])
+    s1_7 = 'https://image.tmdb.org/t/p/w185' + str(s1[6][4])
+    s1_8 = 'https://image.tmdb.org/t/p/w185' + str(s1[7][4])
+    s1_9 = 'https://image.tmdb.org/t/p/w185' + str(s1[8][4])
+    s1_10 = 'https://image.tmdb.org/t/p/w185' + str(s1[9][4])
+    s1_11 = 'https://image.tmdb.org/t/p/w185' + str(s1[10][4])
+    s1_12 = 'https://image.tmdb.org/t/p/w185' + str(s1[11][4])
+    s1_13 = 'https://image.tmdb.org/t/p/w185' + str(s1[12][4])
+    s1_14 = 'https://image.tmdb.org/t/p/w185' + str(s1[13][4])
+    s1_15 = 'https://image.tmdb.org/t/p/w185' + str(s1[14][4])
+    
+    conn.commit()
+    conn.close()
+    return template('Search.html',username = userName, s1 = s1_1, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
 
 @route("/forgot")
 def forgot_page(error = None):
