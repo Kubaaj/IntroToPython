@@ -31,12 +31,12 @@ def login():
         password = request.forms.get('password', default=False)
         randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
         log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
-        
+
         conn = sqlite3.connect('jjmovie.db')
         c = conn.cursor()
         c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginPairExists FROM users WHERE Login = ? AND Password = ? LIMIT 1", (loginName, password))
-        credsCorrect = c.fetchone()[0] == 1  
-        
+        credsCorrect = c.fetchone()[0] == 1
+
         if credsCorrect:
             ts = None
             if request.forms.get('remember'):
@@ -54,7 +54,6 @@ def login():
 
             conn.commit()
             conn.close()
-
             redirect('/index')
             return True
         else:
@@ -110,7 +109,6 @@ def signup():
 @route('/index')
 def main_page():
     loginName = checkAuth()
-    userName = users[loginName]["name"]
     
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
@@ -214,7 +212,7 @@ def main_page():
     
     conn.commit()
     conn.close()
-    return template('MainPage.html',username = userName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
+    return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
 
 
 @route('/index', method='POST')
@@ -316,3 +314,6 @@ def checkAuth():
 
 
 run(host='localhost', port=8080, debug=True)
+
+
+#clean up
