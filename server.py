@@ -214,22 +214,22 @@ def main_page():
     conn.close()
     return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
 
+    request.forms.get('search_term')
 
 @route('/index', method='POST')
 def mainPageSearch():
-    if request.forms.get('gosearch', default=False):
-        redirect('/search')
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
     
     
     
-@route('/search')
-def search():
+@route('/search/<search_term>')
+def search(search_term):
     loginName = checkAuth()
-    userName = users[loginName]["name"]
     
     #form = cgi.FieldStorage()
     #searchString =  form.getvalue('searchbox')
-    searchString = "PIRATE"
+    searchString = search_term.upper()
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
@@ -249,27 +249,39 @@ def search():
         WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?)
         ORDER BY SearchValue DESC, CAST(m.Popularity AS INT) DESC, CAST(m.VoteAverage AS INT)  DESC LIMIT 20;
     """
+    sql2 = """
+    SELECT COUNT(DISTINCT m.MovieId)
+        FROM Movies m
+        LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
+        LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
+        LEFT JOIN MovieGenres mg ON m.MovieId = mg.MovieId
+        LEFT JOIN Genres g ON mg.GenreId = g.GenreId
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?);
+    """
+    c.execute(str(sql2), (searchString, searchString, searchString,))
+    num = c.fetchall()
     c.execute(str(sql), (searchString, searchString, searchString, searchString, searchString,))
     s1=c.fetchall()
-    s1_1 = 'https://image.tmdb.org/t/p/w185' + str(s1[0][4])
-    s1_2 = 'https://image.tmdb.org/t/p/w185' + str(s1[1][4])
-    s1_3 = 'https://image.tmdb.org/t/p/w185' + str(s1[2][4])
-    s1_4 = 'https://image.tmdb.org/t/p/w185' + str(s1[3][4])
-    s1_5 = 'https://image.tmdb.org/t/p/w185' + str(s1[4][4])
-    s1_6 = 'https://image.tmdb.org/t/p/w185' + str(s1[5][4])
-    s1_7 = 'https://image.tmdb.org/t/p/w185' + str(s1[6][4])
-    s1_8 = 'https://image.tmdb.org/t/p/w185' + str(s1[7][4])
-    s1_9 = 'https://image.tmdb.org/t/p/w185' + str(s1[8][4])
-    s1_10 = 'https://image.tmdb.org/t/p/w185' + str(s1[9][4])
-    s1_11 = 'https://image.tmdb.org/t/p/w185' + str(s1[10][4])
-    s1_12 = 'https://image.tmdb.org/t/p/w185' + str(s1[11][4])
-    s1_13 = 'https://image.tmdb.org/t/p/w185' + str(s1[12][4])
-    s1_14 = 'https://image.tmdb.org/t/p/w185' + str(s1[13][4])
-    s1_15 = 'https://image.tmdb.org/t/p/w185' + str(s1[14][4])
-    
+    num = num[0][0]
+    print('NUM: ' + str(num))
+    s2 = [None] * 20
+    for i in range(20):
+        if i < int(num):
+            s2[i] = 'https://image.tmdb.org/t/p/w185' + str(s1[i][4])
+        else:
+            s2[i] = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+
+    s1 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
     conn.commit()
     conn.close()
-    return template('Search.html',username = userName, s1 = s1_1, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
+    return template('Search.html', s1 = s1, s2 = s2) #, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
+
+@route('/search/<search_term>', method='POST')
+def searchNextSearch(search_term):
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
+
 
 @route("/forgot")
 def forgot_page(error = None):

@@ -176,8 +176,10 @@ display: table;
     <a href="#movies">Movies</a>
     <a href="#recent">Recently Added</a>
     <a href="#recent">My List</a>
-    <input type="text" placeholder="Search...">
-	<input type="submit" value="GO!">
+	<form method = "POST">
+    <input type="text" placeholder="Search..." name="search_term">
+	<input type="submit" value="GO!" name="search_button">
+	</form>
     <div class="dropdown">
       <button class="dropbtn">Account &#x25BE;
         <i class="fa fa-caret-down"></i>
