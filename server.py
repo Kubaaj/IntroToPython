@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import datetime
 import sqlite3
+import cgi
 
 
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
@@ -75,7 +76,6 @@ def signout():
         conn.close()
         redirect("/index")
 
-
 @route('/signup')
 def signup_page(error = None):
     return template('SingUpPage.html', error=error)
@@ -119,10 +119,19 @@ def signup():
 @route('/index')
 def main_page():
     loginName = checkAuth()
-
+    
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
-    c.execute("Create View BestFilms AS SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId WHERE VoteCount > 1050 AND VoteCount IS NOT NULL ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 6;")
+    sql = """
+        CREATE VIEW BestFilms AS 
+        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL 
+        ORDER BY VoteAverage DESC, VoteCount DESC 
+        LIMIT 6;
+    """
+    c.execute(str(sql))
     c.execute("SELECT PosterPath FROM BestFilms LIMIT 1;")
     best1=c.fetchone()
     best1_2 = 'https://image.tmdb.org/t/p/w185' + best1[0]
@@ -142,7 +151,7 @@ def main_page():
     best6=c.fetchone()
     best6_2 = 'https://image.tmdb.org/t/p/w185' + best6[0]
     c.execute("DROP VIEW BestFilms;")
-
+    
     c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1;", (loginName,))
     rent1=c.fetchone()
     if rent1 == None:
@@ -179,10 +188,18 @@ def main_page():
         rent6_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
     else:
         rent6_2 = 'https://image.tmdb.org/t/p/w185' + rent6[0]
-
+    
         conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
-    c.execute("Create View PopularFilms AS SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId ORDER BY Pop DESC LIMIT 6;")
+    sql = """
+        CREATE VIEW PopularFilms AS 
+        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        ORDER BY Pop DESC 
+        LIMIT 6;    
+    """
+    c.execute(str(sql))
     c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1;")
     pop1=c.fetchone()
     pop1_2 = 'https://image.tmdb.org/t/p/w185' + pop1[0]
@@ -202,10 +219,78 @@ def main_page():
     pop6=c.fetchone()
     pop6_2 = 'https://image.tmdb.org/t/p/w185' + pop6[0]
     c.execute("DROP VIEW PopularFilms;")
-
+    
     conn.commit()
     conn.close()
     return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
+
+    request.forms.get('search_term')
+
+@route('/index', method='POST')
+def mainPageSearch():
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
+    
+    
+    
+@route('/search/<search_term>')
+def search(search_term):
+    loginName = checkAuth()
+    
+    #form = cgi.FieldStorage()
+    #searchString =  form.getvalue('searchbox')
+    searchString = search_term.upper()
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Popularity, m.VoteAverage, p.PosterPath,
+        CASE 
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
+              ELSE 3 END) 
+        END AS SearchValue 
+
+        FROM Movies m
+        LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
+        LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
+        LEFT JOIN MovieGenres mg ON m.MovieId = mg.MovieId
+        LEFT JOIN Genres g ON mg.GenreId = g.GenreId
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?)
+        ORDER BY SearchValue DESC, CAST(m.Popularity AS INT) DESC, CAST(m.VoteAverage AS INT)  DESC LIMIT 20;
+    """
+    sql2 = """
+    SELECT COUNT(DISTINCT m.MovieId)
+        FROM Movies m
+        LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
+        LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
+        LEFT JOIN MovieGenres mg ON m.MovieId = mg.MovieId
+        LEFT JOIN Genres g ON mg.GenreId = g.GenreId
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?);
+    """
+    c.execute(str(sql2), (searchString, searchString, searchString,))
+    num = c.fetchall()
+    c.execute(str(sql), (searchString, searchString, searchString, searchString, searchString,))
+    s1=c.fetchall()
+    num = num[0][0]
+    print('NUM: ' + str(num))
+    s2 = [None] * 20
+    for i in range(20):
+        if i < int(num):
+            s2[i] = 'https://image.tmdb.org/t/p/w185' + str(s1[i][4])
+        else:
+            s2[i] = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+
+    s1 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
+    conn.commit()
+    conn.close()
+    return template('Search.html', s1 = s1, s2 = s2) #, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
+
+@route('/search/<search_term>', method='POST')
+def searchNextSearch(search_term):
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
 
 
 @route("/forgot")

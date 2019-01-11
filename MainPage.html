@@ -9,17 +9,17 @@
       background-color: black;
       color: white;
     }
-
+	
     .logo {
       color: #B9090B;
     }
-
+	
     /* Add a black background color to the top navigation bar */
     .topnav {
       overflow: hidden;
       background-color: black;
     }
-
+	
     /* Style the links inside the navigation bar */
     .topnav a {
       float: left;
@@ -31,19 +31,19 @@
       font-size: 17px;
       font-weight: bold;
     }
-
+	
     /* Change the color of links on hover */
     .topnav a:hover, .dropdown:hover .dropbtn  {
       background-color: #ddd;
       color: black;
     }
-
+	
     /* Style the "active" element to highlight the current page */
     .topnav a.active {
       background-color: #B9090B;
       color: white;
     }
-
+	
     /* Style the search box inside the navigation bar */
     .topnav input[type=text] {
       float: left;
@@ -55,7 +55,7 @@
       font-size: 17px;
       border-radius: 5px
     }
-
+	
 	        /* Style the search button inside the navigation bar */
     .topnav input[type=submit] {
       float: left;
@@ -67,12 +67,12 @@
       font-size: 17px;
       border-radius: 5px
     }
-
+	
     .dropdown {
       float: right;
       overflow: hidden;
     }
-
+	
     /* Dropdown button */
     .dropdown .dropbtn {
       font-size: 16px;
@@ -87,8 +87,8 @@
       margin: 0;
       /* Important for vertical align on mobile phones */
     }
-
-
+	
+	
     /* Dropdown content (hidden by default) */
     .dropdown-content {
       display: none;
@@ -99,7 +99,7 @@
       z-index: 1;
       border: 1px solid darkgrey;
     }
-
+	
     /* Links inside the dropdown */
     .dropdown-content a {
       float: none;
@@ -109,12 +109,12 @@
       display: block;
       text-align: left;
     }
-
+	
     /* Add a grey background color to dropdown links on hover */
     .dropdown-content a:hover {
       background-color: #ddd;
     }
-
+	
 /* Show the dropdown menu on hover */
 .dropdown:hover .dropdown-content {
 display: block;
@@ -129,7 +129,7 @@ padding: 1px;
   border-radius:5px;
   width:92px;
   height:138px;
-
+  
 }
 
 .container h3 {
@@ -147,7 +147,7 @@ display: table;
     /* When the screen is less than 600px wide, stack the links and the search field vertically instead of horizontally */
     @media screen and (max-width: 600px) {
 
-      .topnav a,
+	.topnav a,
       .topnav input[type=text] {
         float: none;
         display: block;
@@ -176,8 +176,10 @@ display: table;
     <a href="#movies">Movies</a>
     <a href="#recent">Recently Added</a>
     <a href="#recent">My List</a>
-    <input type="text" placeholder="Search...">
-	<input type="submit" value="GO!">
+	<form method = "POST">
+    <input type="text" placeholder="Search..." name="search_term">
+	<input type="submit" value="GO!" name="search_button">
+	</form>
     <div class="dropdown">
       <button class="dropbtn">Account &#x25BE;
         <i class="fa fa-caret-down"></i>
