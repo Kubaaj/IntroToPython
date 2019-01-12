@@ -415,21 +415,13 @@ def forgot_page(error = None):
 def reset():
         error = None
         loginName = request.forms.get('login_name', default=False)
-        conn = sqlite3.connect('jjmovie.db')
-        c = conn.cursor()
-        c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginExists FROM users WHERE Login = ? LIMIT 1", (loginName,))
-        accountExists = c.fetchone()[0] == 1
-        if accountExists:
+        if (loginName in users):
             random_password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-            print(random_password)
-            c.execute("UPDATE Users SET Password = random_password WHERE Login = ?", (loginName,))
-            conn.commit()
-            conn.close()
+            users[loginName]["password"] =  random_password
+
             redirect("/index")
         else:
             error =  "Account for this email does not exists"
-        conn.commit()
-        conn.close()
         return forgot_page(error)
 
 
