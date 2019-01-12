@@ -92,16 +92,26 @@ def signup():
 
     randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
     log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
-    if (loginName in users):
+
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginPairExists FROM users WHERE Login = ? LIMIT 1", (loginName,))
+    accountExists = c.fetchone()[0] == 1
+
+    if accountExists:
         error = "Account for this email address already exists"
     elif password != repPassword:
         error = "Passwords do not match"
     else:
         user_data = {"name":name, "password":password, "email":loginName, "loggedIn":False,  "randStr":"", "lastSeen":0}
-        users[loginName] = user_data
+        c.execute("INSERT INTO users (Login, Password, LoggedIn, RandStr, LastSeen) VALUES (?,?,0,None,0)",(loginName, password))
+        conn.commit()
+        conn.close()
 
         redirect('/login')
         return True
+    conn.commit()
+    conn.close()
     return signup_page(error)
 
 
@@ -405,13 +415,21 @@ def forgot_page(error = None):
 def reset():
         error = None
         loginName = request.forms.get('login_name', default=False)
-        if (loginName in users):
+        conn = sqlite3.connect('jjmovie.db')
+        c = conn.cursor()
+        c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginExists FROM users WHERE Login = ? LIMIT 1", (loginName,))
+        accountExists = c.fetchone()[0] == 1
+        if accountExists:
             random_password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-            users[loginName]["password"] =  random_password
-
+            print(random_password)
+            c.execute("UPDATE Users SET Password = random_password WHERE Login = ?", (loginName,))
+            conn.commit()
+            conn.close()
             redirect("/index")
         else:
             error =  "Account for this email does not exists"
+        conn.commit()
+        conn.close()
         return forgot_page(error)
 
 
