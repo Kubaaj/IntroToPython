@@ -126,16 +126,37 @@ padding: 1px;
 }
 
 .container img {
-  border-radius:5px;
-  width:92px;
-  height:138px;
+  border-radius:30px;
+  width:276px;
+  height:414px;
 
 }
 
 .container h3 {
 margin-bottom: 5px;
-margin-top: 8px
+margin-top: 8px;
+margin-left: 25px
 }
+
+.btn
+{
+padding: 10px 20px 11px !important;
+font-size: 21px !important;
+background-color: #F36C8C;
+font-weight: bold;
+text-shadow: 1px 1px #F36C8C;
+color: #ffffff;
+border-radius: 100px;
+-moz-border-radius: 100px;
+-webkit-border-radius: 100px;
+border: 1px solid #F36C8C;
+cursor: pointer;
+box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+-moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+-webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+}
+
+
 
 /* Clear floats after image containers */
 .row::after {
@@ -197,18 +218,40 @@ display: table;
 
   <div class='container'>
     <div class="container">
-      <h3> Search Results:</h3>
+      <h3> Movie Title {{movie_chosen[0][1]}}</h3>
       <div class="row">
         <div class="column">
           <img src={{movie_chosen[0][7]}} >
         </div>
-		<h3> Movie Rating:</h3>
-		<input type="submit" value={{movie_chosen[0][5]}} name="search_button2">
-      </div>
-	  <a href="https://www.youtube.com/watch?v=WjrqpJQBKCQ" target="_blank"> <input type="submit" value="Watch a movie" name="watch"></a>
+        <div class="column">
+            <div class="row">
+		      <h3> Movie Rating: {{movie_chosen[0][5]}}</h3>
+		      <h3> Based on {{movie_chosen[0][6]}} votes</h3>
+		      <h3> Release date: {{movie_chosen[0][3]}} </h3>
+		      <h3> Runtime: {{movie_chosen[0][4]}} minutes</h3>
+			  <h3> Price: {{movie_chosen[0][2]}} USD</h3>
+		    </div>
+		    <div class="row">
+		    	<button class="btn" name="favourite">Add to favourites</button>
+		    </div>
+		    <div class="row">
+                <h1></h1>
+                <button class="btn" name="buy">Buy this movie</button>
+	        </div>
+	        <div class="row">
+	            <h1></h1>
+	            <a href="https://www.youtube.com/watch?v=WjrqpJQBKCQ" target="_blank"> <button class="btn" name="watch">Watch a movie</button></a>
+	        </div>
+		</div>
+
+     </div>
+
 	</div>
+	<div class="column">
+	     		<input type="submit" value="Add to favourites" name="favourite" >
+		<input type="submit" value="Buy this movie" name="buy" style="color:black; width:200px; height: 50px">
+		<a href="https://www.youtube.com/watch?v=WjrqpJQBKCQ" target="_blank"> <input type="submit" value="Watch a movie" name="watch" style="color:black; width:200px; height: 50px"></a>
   </div>
-
+</div>
 </body>
-
 </html>
