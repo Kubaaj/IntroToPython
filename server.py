@@ -7,7 +7,8 @@ import logging.handlers
 import datetime
 import sqlite3
 import cgi
-
+import bcrypt
+import emailing
 
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
 log = logging.getLogger('bottle')
@@ -26,7 +27,8 @@ def login_page(error = None):
 @route('/login', method='POST')
 def login():
     if request.forms.get('signin', default=False):
-        error = None
+        error = 'Invalid Credentials. Please try again.'
+        credsCorrect = False
         loginName = request.forms.get('login_name', default=False)
         password = request.forms.get('password', default=False)
         randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
@@ -34,30 +36,34 @@ def login():
 
         conn = sqlite3.connect('jjmovie.db')
         c = conn.cursor()
-        c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginPairExists FROM users WHERE Login = ? AND Password = ? LIMIT 1", (loginName, password))
-        credsCorrect = c.fetchone()[0] == 1
+        c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginPairExists FROM users WHERE Login = ? LIMIT 1", (loginName,))
+        accountExists = c.fetchone()[0] == 1
 
-        if credsCorrect:
-            ts = None
-            if request.forms.get('remember'):
-                ts = datetime.datetime.now()+datetime.timedelta(days=1)
-                response.set_cookie("user", loginName, secret=secretKey, expires = ts )
-                response.set_cookie("randStr", randStr, secret=secretKey, expires = ts)
-            else:
-                response.set_cookie("user", loginName, secret=secretKey)
-                response.set_cookie("randStr", randStr, secret=secretKey)
+        if accountExists:
+            c.execute("SELECT Salt, Hash FROM Users WHERE Login = ?", (loginName,))
+            salt_hash_tuple = c.fetchone()
+            credsCorrect = salt_hash_tuple[1] ==  bcrypt.hashpw(str.encode(password), salt_hash_tuple[0])
+            if credsCorrect:
+                ts = None
+                if request.forms.get('remember'):
+                    ts = datetime.datetime.now()+datetime.timedelta(days=1)
+                    response.set_cookie("user", loginName, secret=secretKey, expires = ts )
+                    response.set_cookie("randStr", randStr, secret=secretKey, expires = ts)
+                else:
+                    response.set_cookie("user", loginName, secret=secretKey)
+                    response.set_cookie("randStr", randStr, secret=secretKey)
 
-            c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
-            c.execute("UPDATE Users SET LoggedIn = 1 WHERE Login = ?", (loginName,))
-            c.execute("UPDATE Users SET RandStr = ? WHERE Login = ?", (randStr,loginName))
-            c.execute("SELECT * FROM users WHERE Login = ? LIMIT 1", (loginName, ))
+                c.execute("UPDATE Users SET LastSeen = ? WHERE Login = ?", (time.time(), loginName,))
+                c.execute("UPDATE Users SET LoggedIn = 1 WHERE Login = ?", (loginName,))
+                c.execute("UPDATE Users SET RandStr = ? WHERE Login = ?", (randStr,loginName))
+                c.execute("SELECT * FROM users WHERE Login = ? LIMIT 1", (loginName, ))
 
-            conn.commit()
-            conn.close()
-            redirect('/index')
-            return True
-        else:
-            error = 'Invalid Credentials. Please try again.'
+                conn.commit()
+                conn.close()
+                error = None
+                redirect('/index')
+                return True
+
         conn.commit()
         conn.close()
         return login_page(error)
@@ -85,13 +91,9 @@ def signup_page(error = None):
 @route('/signup', method='POST')
 def signup():
     error = None
-    name = request.forms.get('name', default=False)
     loginName = request.forms.get('login_name', default=False)
     password = request.forms.get('password', default=False)
     repPassword = request.forms.get('rep_password', default=False)
-
-    randStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(18))
-    log.info(str(loginName) + ' ' + request.method + ' ' + request.url + ' ' + request.environ.get('REMOTE_ADDR'))
 
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
@@ -103,8 +105,9 @@ def signup():
     elif password != repPassword:
         error = "Passwords do not match"
     else:
-        user_data = {"name":name, "password":password, "email":loginName, "loggedIn":False,  "randStr":"", "lastSeen":0}
-        c.execute("INSERT INTO users (Login, Password, LoggedIn, RandStr, LastSeen) VALUES (?,?,0,None,0)",(loginName, password))
+        salt = bcrypt.gensalt()
+        hash = bcrypt.hashpw(str.encode(password), salt)
+        c.execute("INSERT INTO users (Login, Password, LoggedIn, RandStr, LastSeen, Salt, Hash) VALUES (?,?,0,null,0,?,?)",(loginName, password,salt,hash))
         conn.commit()
         conn.close()
 
@@ -114,21 +117,56 @@ def signup():
     conn.close()
     return signup_page(error)
 
+@route('/settings')
+def settings(error = None):
+    loginName = checkAuth()
+    return template('Settings.html',error = error)
+
+
+@route('/settings', method = 'POST')
+def settings(error = None):
+    loginName = checkAuth()
+    error = None
+    password = request.forms.get('password', default=False)
+    # loginName = request.forms.get('login_name', default=False)
+    # repLoginName = request.forms.get('rep_login_name', default=False)
+    newPassword = request.forms.get('new_password', default=False)
+    repNewPassword = request.forms.get('rep_rep_password', default=False)
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("SELECT Salt, Hash FROM Users WHERE Login = ?", (loginName,))
+    salt_hash_tuple = c.fetchone()
+    credsCorrect = salt_hash_tuple[1] ==  bcrypt.hashpw(str.encode(password), salt_hash_tuple[0])
+    if newPassword != repNewPassword:
+        error = "Passwords do not match"
+    elif not credsCorrect:
+        error = "Currect password is not correct"
+    else:
+        salt = bcrypt.gensalt()
+        hash = bcrypt.hashpw(str.encode(newPassword), salt)
+        c.execute("UPDATE Users SET Password = ?, Salt = ?, Hash = ? WHERE Login = ?",(newPassword,salt,hash, loginName))
+        error = "Password changed succesful"
+        redirect("/index")
+
+    conn.commit()
+    conn.close()
+    return settings(error)
+
 
 @route('/')
 @route('/index')
 def main_page():
     loginName = checkAuth()
-    
+
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        CREATE VIEW BestFilms AS 
-        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
-        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL 
-        ORDER BY VoteAverage DESC, VoteCount DESC 
+        CREATE VIEW BestFilms AS
+        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL
+        ORDER BY VoteAverage DESC, VoteCount DESC
         LIMIT 6;
     """
     c.execute(str(sql))
@@ -151,7 +189,7 @@ def main_page():
     best6=c.fetchone()
     best6_2 = 'https://image.tmdb.org/t/p/w185' + best6[0]
     c.execute("DROP VIEW BestFilms;")
-    
+
     c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1;", (loginName,))
     rent1=c.fetchone()
     if rent1 == None:
@@ -188,16 +226,16 @@ def main_page():
         rent6_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
     else:
         rent6_2 = 'https://image.tmdb.org/t/p/w185' + rent6[0]
-    
+
         conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        CREATE VIEW PopularFilms AS 
-        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
-        ORDER BY Pop DESC 
-        LIMIT 6;    
+        CREATE VIEW PopularFilms AS
+        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        ORDER BY Pop DESC
+        LIMIT 6;
     """
     c.execute(str(sql))
     c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1;")
@@ -219,7 +257,7 @@ def main_page():
     pop6=c.fetchone()
     pop6_2 = 'https://image.tmdb.org/t/p/w185' + pop6[0]
     c.execute("DROP VIEW PopularFilms;")
-    
+
     conn.commit()
     conn.close()
     return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
@@ -230,13 +268,13 @@ def main_page():
 def mainPageSearch():
     search_term = request.forms.get('search_term')
     redirect('/search/' + search_term)
-    
-    
-    
+
+
+
 @route('/search/<search_term>')
 def search(search_term):
     loginName = checkAuth()
-    
+
     #form = cgi.FieldStorage()
     #searchString =  form.getvalue('searchbox')
     searchString = search_term.upper()
@@ -244,11 +282,11 @@ def search(search_term):
     c = conn.cursor()
     sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Popularity, m.VoteAverage, p.PosterPath,
-        CASE 
-        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
-        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
-              ELSE 3 END) 
-        END AS SearchValue 
+        CASE
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4
+              ELSE 3 END)
+        END AS SearchValue
 
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
@@ -292,6 +330,37 @@ def searchNextSearch(search_term):
     search_term = request.forms.get('search_term')
     redirect('/search/' + search_term)
 
+@route("/reset/<token>")
+def reset_page(token, error = None):
+        return(template("ResetPage.html", error = error))
+
+@route("/reset/<token>", method = 'POST')
+def reset_page(token):
+    password = request.forms.get('password', default=False)
+    repPassword = request.forms.get('rep_password', default=False)
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    c.execute("SELECT Login FROM Users WHERE Token = ? AND ResetTime > ? LIMIT 1", (token, time.time() - 15 * 60))
+    loginName = c.fetchone()
+    noValidToken = loginName == None
+
+    if password != repPassword:
+        error = "Passwords do not match"
+    elif noValidToken:
+        redirect("/index")
+    else:
+        loginName = loginName[0]
+        salt = bcrypt.gensalt()
+        hash = bcrypt.hashpw(str.encode(password), salt)
+        c.execute("UPDATE Users SET Password = ?, Salt = ?, Hash = ? WHERE Login = ?",(password,salt,hash, loginName))
+        conn.commit()
+        conn.close()
+
+        redirect('/login')
+        return True
+
+    return(template("ResetPage.html", error))
+
 
 @route("/forgot")
 def forgot_page(error = None):
@@ -306,17 +375,20 @@ def reset():
         c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS LoginExists FROM users WHERE Login = ? LIMIT 1", (loginName,))
         accountExists = c.fetchone()[0] == 1
         if accountExists:
-            random_password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-            print(random_password)
-            c.execute("UPDATE Users SET Password = random_password WHERE Login = ?", (loginName,))
+            token = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+            c.execute("UPDATE Users SET Token =?, ResetTime = ? WHERE Login = ?", (token, time.time() ,loginName))
+            emailing.send_reset_link("jj.bednarski@student.uw.edu.pl","http://localhost:8080/reset/" + token)
             conn.commit()
             conn.close()
             redirect("/index")
         else:
             error =  "Account for this email does not exists"
+
         conn.commit()
         conn.close()
         return forgot_page(error)
+
+
 
 
 
