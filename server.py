@@ -263,18 +263,135 @@ def main_page():
     return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
 
     request.forms.get('search_term')
+    request.forms.get('img1')
 
 @route('/index', method='POST')
 def mainPageSearch():
     search_term = request.forms.get('search_term')
     redirect('/search/' + search_term)
 
+    if request.forms.get('search_term', default=False):
+        search_term = request.forms.get('search_term')
+        redirect('/search/' + search_term)
+    elif request.form.get('img1', default=False):
+        img1 = request.forms.get('img1')
+        redirect('/movie/' + img1)
+        
+    
+@route('/movie/<img1>')
+def movie(img1):
+    loginName = checkAuth()
+    movie_chosen_final = []
+    loginName = checkAuth()
+    typ = img1[:4]
+    num = img1[4:]
+    print("RENT TYPE: " + str(typ) + " / RENT NUM: " + str(num))
+    num = int(num)-1
+    print("RENT TYPE: " + str(typ) + " / RENT NUM: " + str(num))
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    if typ == "rent":
+        print("RENTING")
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath
 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        LEFT JOIN Rentals r ON m.MovieId = r.MovieId 
+        LEFT JOIN Users u ON r.UserId = u.UserId
+        WHERE u.Login = ?
+        ORDER BY date(r.RentalDate) DESC LIMIT 1 OFFSET ?;
+        """
+        c.execute(str(sql), (loginName, num,))
+        movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+    
+    elif typ == "best":
+        print("BEST")
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL
+        ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 1 OFFSET ?;
+        """
+        c.execute(str(sql), (num,))
+        movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+        
+    elif typ == "popl":
+        print("POPULAR")
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        FROM Movies m 
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        ORDER BY Pop DESC LIMIT 1 OFFSET ?;
+        """
+        c.execute(str(sql), (num,))
+        movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+               
+    conn.commit()
+    conn.close()
+    return template('Movie.html', movie_chosen = movie_chosen_final)         
+    
+@route('/movie/search/<search_term>/<img1>')
+def movieSearch(search_term, img1):
+    loginName = checkAuth()
+    searchString = search_term.upper()
+    movie_chosen_final = []
+    typ = img1[:4]
+    num = img1[4:]
+    print("RENT TYPE: " + str(typ) + " / RENT NUM: " + str(num))
+    print("SEARCH STRING: " + str(searchString))
+    num = int(num)-1
+    print("RENT TYPE: " + str(typ) + " / RENT NUM: " + str(num))
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    if typ == "sear":
+        print("SEARCHING")
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath,
+        CASE 
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
+              ELSE 3 END) 
+        END AS SearchValue 
+
+        FROM Movies m
+        LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
+        LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
+        LEFT JOIN MovieGenres mg ON m.MovieId = mg.MovieId
+        LEFT JOIN Genres g ON mg.GenreId = g.GenreId
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE INSTR(UPPER(m.Title), ?) OR INSTR(UPPER(k.Keyword), ?) OR INSTR(UPPER(g.GenreName), ?)
+        ORDER BY SearchValue DESC, CAST(m.Popularity AS INT) DESC, CAST(m.VoteAverage AS INT) DESC LIMIT 1 OFFSET ?;
+        """
+        c.execute(str(sql), (searchString, searchString, searchString, searchString, searchString, num,))
+        print("EXECUTED")
+        movie_chosen = c.fetchall()
+        print("MOVIES: " + str(movie_chosen[0]))
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+    conn.commit()
+    conn.close()
+    return template('Movie.html', movie_chosen = movie_chosen_final)  
 
 @route('/search/<search_term>')
 def search(search_term):
     loginName = checkAuth()
-
+    
     #form = cgi.FieldStorage()
     #searchString =  form.getvalue('searchbox')
     searchString = search_term.upper()
@@ -282,11 +399,11 @@ def search(search_term):
     c = conn.cursor()
     sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Popularity, m.VoteAverage, p.PosterPath,
-        CASE
-        WHEN INSTR(UPPER(m.Title), ?) THEN 5
-        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4
-              ELSE 3 END)
-        END AS SearchValue
+        CASE 
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
+              ELSE 3 END) 
+        END AS SearchValue 
 
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
@@ -323,7 +440,7 @@ def search(search_term):
     s1 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
     conn.commit()
     conn.close()
-    return template('Search.html', s1 = s1, s2 = s2) #, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
+    return template('Search.html', s1 = s1, s2 = s2, searchString = searchString) #, s2 = s1_2, s3 = s1_3, s4 = s1_4, s5 = s1_5, s6 = s1_6, s7 = s1_7, s8 = s1_8, s9 = s1_9, s10 = s1_10)
 
 @route('/search/<search_term>', method='POST')
 def searchNextSearch(search_term):
@@ -383,12 +500,9 @@ def reset():
             redirect("/index")
         else:
             error =  "Account for this email does not exists"
-
         conn.commit()
         conn.close()
         return forgot_page(error)
-
-
 
 
 
