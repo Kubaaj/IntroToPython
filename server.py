@@ -60,7 +60,7 @@ def login():
 
             conn.commit()
             conn.close()
-                error = None
+            error = None
             redirect('/index')
             return True
 
@@ -267,8 +267,8 @@ def main_page():
 
 @route('/index', method='POST')
 def mainPageSearch():
-        search_term = request.forms.get('search_term')
-        redirect('/search/' + search_term)
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
 
     if request.forms.get('search_term', default=False):
         search_term = request.forms.get('search_term')
@@ -332,6 +332,20 @@ def movie(img1):
         FROM Movies m 
         LEFT JOIN Posters p ON m.MovieId = p.MovieId 
         ORDER BY Pop DESC LIMIT 1 OFFSET ?;
+        """
+        c.execute(str(sql), (num,))
+        movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+
+    elif typ == "rect":
+        print("RECENTLY_ADDED")
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        FROM Movies AS m LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        WHERE m.ReleaseDate <> "" ORDER BY ReleaseDate DESC LIMIT 1 OFFSET ?;
         """
         c.execute(str(sql), (num,))
         movie_chosen = c.fetchall()
@@ -498,6 +512,27 @@ def reset():
             error =  "Account for this email does not exists"
         return forgot_page(error)
 
+@route('/recently_added')
+def recently_added():
+    loginName = checkAuth()
+    
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    sql = """
+        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath 
+        FROM Movies AS m 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        WHERE m.ReleaseDate <> "" ORDER BY ReleaseDate DESC LIMIT 20
+    """
+    c.execute(str(sql))
+    recent=c.fetchall()
+    recent2 = [None] * 20
+    for i in range(20):
+        recent2[i] = 'https://image.tmdb.org/t/p/w185' + str(recent[i][3])
+
+    conn.commit()
+    conn.close()
+    return template('RecentlyAdded.html', r2=recent2)
 
 
 def checkAuth():
