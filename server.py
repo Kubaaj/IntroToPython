@@ -294,7 +294,6 @@ def movie(img1):
         print("RENTING")
         sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath
-
         FROM Movies m 
         LEFT JOIN Posters p ON m.MovieId = p.MovieId 
         LEFT JOIN Rentals r ON m.MovieId = r.MovieId 
@@ -353,10 +352,23 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
+    
+    c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], loginName,))
+    IsFavourite = c.fetchone()
                
     conn.commit()
     conn.close()
-    return template('Movie.html', movie_chosen = movie_chosen_final)         
+    if IsFavourite == 1:
+        return template('Movie_false.html', movie_chosen = movie_chosen_final)   
+    else:
+        return template('Movie.html', movie_chosen = movie_chosen_final)   
+
+@route('/movie/<img1>', method='POST')
+def movie_fav(img1):
+        if request.forms.get('favourite', default=False):
+            a=0
+            print("BUTTON PRESSED!!!")
+            return template('Movie.html', movie_chosen = movie_chosen_final)    
     
 @route('/movie/search/<search_term>/<img1>')
 def movieSearch(search_term, img1):
@@ -380,7 +392,6 @@ def movieSearch(search_term, img1):
         ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
               ELSE 3 END) 
         END AS SearchValue 
-
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
         LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
@@ -418,7 +429,6 @@ def search(search_term):
         ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
               ELSE 3 END) 
         END AS SearchValue 
-
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
         LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
