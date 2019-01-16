@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: black;
+      color: white;
+    }
+
+    .logo {
+      color: #B9090B;
+    }
+
+    /* Add a black background color to the top navigation bar */
+    .topnav {
+      overflow: hidden;
+      background-color: black;
+    }
+
+    /* Style the links inside the navigation bar */
+    .topnav a {
+      float: left;
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    /* Change the color of links on hover */
+    .topnav a:hover, .dropdown:hover .dropbtn  {
+      background-color: #ddd;
+      color: black;
+    }
+
+    /* Style the "active" element to highlight the current page */
+    .topnav a.active {
+      background-color: #B9090B;
+      color: white;
+    }
+
+    /* Style the search box inside the navigation bar */
+    .topnav input[type=text] {
+      float: left;
+      padding: 6px;
+      border: none;
+      margin-top: 8px;
+      margin-right: 16px;
+      margin-left: 16px;
+      font-size: 17px;
+      border-radius: 5px
+    }
+	
+	        /* Style the search button inside the navigation bar */
+    .topnav input[type=submit] {
+      float: left;
+      padding: 6px;
+      border: none;
+      margin-top: 8px;
+      margin-right: 16px;
+      margin-left: 1px;
+      font-size: 17px;
+      border-radius: 5px
+    }
+
+    .dropdown {
+      float: right;
+      overflow: hidden;
+    }
+	
+	submit:disabled {
+		background: black;
+	}
+
+    /* Dropdown button */
+    .dropdown .dropbtn {
+      font-size: 16px;
+      border: none;
+      outline: none;
+      color: white;
+      font-weight:bold;
+      padding: 14px 16px;
+      background-color: inherit;
+      font-family: inherit;
+      /* Important for vertical align on mobile phones */
+      margin: 0;
+      /* Important for vertical align on mobile phones */
+    }
+
+
+    /* Dropdown content (hidden by default) */
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: black;
+      min-width: 100px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      border: 1px solid darkgrey;
+    }
+
+    /* Links inside the dropdown */
+    .dropdown-content a {
+      float: none;
+      color: white;
+      padding: 12px 12px;
+      text-decoration: none;
+      display: block;
+      text-align: left;
+    }
+
+    /* Add a grey background color to dropdown links on hover */
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+display: block;
+}
+
+.column {
+float: left;
+padding: 1px;
+}
+
+.container img {
+  border-radius:30px;
+  width:276px;
+  height:414px;
+
+}
+
+.container h3 {
+margin-bottom: 5px;
+margin-top: 8px;
+margin-left: 25px
+}
+
+.btn
+{
+padding: 10px 20px 11px !important;
+font-size: 21px !important;
+background-color: #F36C8C;
+font-weight: bold;
+text-shadow: 1px 1px #F36C8C;
+color: #ffffff;
+border-radius: 100px;
+-moz-border-radius: 100px;
+-webkit-border-radius: 100px;
+border: 1px solid #F36C8C;
+cursor: pointer;
+box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+-moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+-webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+}
+
+@import url(//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css);
+
+fieldset, label { margin: 0; padding: 0; }
+body{ margin: 20px; }
+h1 { font-size: 1.5em; margin: 10px; }
+
+/****** Style Star Rating Widget *****/
+
+.rating { 
+  border: none;
+  float: left;
+}
+
+.rating > input { display: none; } 
+.rating > label:before { 
+  margin: 5px;
+  font-size: 1.25em;
+  font-family: FontAwesome;
+  display: inline-block;
+  content: "\f005";
+}
+
+.rating > .half:before { 
+  content: "\f089";
+  position: absolute;
+}
+
+.rating > label { 
+  color: #ddd; 
+ float: right; 
+}
+
+/***** CSS Magic to Highlight Stars on Hover *****/
+
+.rating > input:checked ~ label, /* show gold star when clicked */
+.rating:not(:checked) > label:hover, /* hover current star */
+.rating:not(:checked) > label:hover ~ label { color: #FFD700;  } /* hover previous stars in list */
+
+.rating > input:checked + label:hover, /* hover current star when changing rating */
+.rating > input:checked ~ label:hover,
+.rating > label:hover ~ input:checked ~ label, /* lighten current selection */
+.rating > input:checked ~ label:hover ~ label { color: #FFED85;  } 
+
+/* Clear floats after image containers */
+.row::after {
+content: "";
+clear: both;
+display: table;
+}
+
+    /* When the screen is less than 600px wide, stack the links and the search field vertically instead of horizontally */
+    @media screen and (max-width: 600px) {
+
+      .topnav a,
+      .topnav input[type=text] {
+        float: none;
+        display: block;
+        text-align: left;
+        width: 100%;
+        margin: 0;
+        padding: 14px;
+      }
+
+      .topnav input[type=text] {
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+
+
+
+<body>
+
+  <h1 class='logo'> JJVideo </h1>
+  <h2 class='logo '> Hello!</h2>
+
+  <div class="topnav">
+    <a href="../index">Home</a>
+    <a href="../recently_added">Recently Added</a>
+    <a href="#recent">My List</a>
+	<form method = "POST">
+    <input type="text" placeholder="Search..." name="search_term">
+	<input type="submit" value="GO!" name="search_button">
+	</form>
+    <div class="dropdown">
+      <button class="dropbtn">Account &#x25BE;
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a href="#">My Profile</a>
+        <a href="#">Settings</a>
+        <a href="/signout">Sign Out</a>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <div class='container'>
+    <div class="container">
+      <h1> {{movie_chosen[0][1]}}</h1>
+      <div class="row">
+        <div class="column">
+          <img src={{movie_chosen[0][7]}} >
+        </div>
+        <div class="column">
+            <div class="row">
+		      <h3> Movie Rating: {{movie_chosen[0][5]}}</h3>
+		      <h3> Based on {{movie_chosen[0][6]}} votes</h3>
+		      <h3> Release date: {{movie_chosen[0][3]}} </h3>
+		      <h3> Runtime: {{movie_chosen[0][4]}} minutes</h3>
+			  <h3> Price: {{movie_chosen[0][2]}} USD</h3>
+		    </div>
+					    <div class="row">
+			<!-- Add icon library -->
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+			</div>
+			<div class="row">
+			<fieldset class="rating">
+			<input type="radio" id="star5" name="rating" value="5" /><label class = "full" for="star5" title="Awesome - 5 stars"></label>
+			<input type="radio" id="star4half" name="rating" value="4 and a half" /><label class="half" for="star4half" title="Pretty good - 4.5 stars"></label>
+			<input type="radio" id="star4" name="rating" value="4" /><label class = "full" for="star4" title="Pretty good - 4 stars"></label>
+			<input type="radio" id="star3half" name="rating" value="3 and a half" /><label class="half" for="star3half" title="Meh - 3.5 stars"></label>
+			<input type="radio" id="star3" name="rating" value="3" /><label class = "full" for="star3" title="Meh - 3 stars"></label>
+			<input type="radio" id="star2half" name="rating" value="2 and a half" /><label class="half" for="star2half" title="Kinda bad - 2.5 stars"></label>
+			<input type="radio" id="star2" name="rating" value="2" /><label class = "full" for="star2" title="Kinda bad - 2 stars"></label>
+			<input type="radio" id="star1half" name="rating" value="1 and a half" /><label class="half" for="star1half" title="Meh - 1.5 stars"></label>
+			<input type="radio" id="star1" name="rating" value="1" /><label class = "full" for="star1" title="Sucks big time - 1 star"></label>
+			<input type="radio" id="starhalf" name="rating" value="half" /><label class="half" for="starhalf" title="Sucks big time - 0.5 stars"></label>
+			</fieldset>
+			</div>
+		    <div class="row">
+			<h1></h1>
+			<h1></h1>
+		    	<h3 style="color:red;">It's one of your favourite films</h3>
+			</div>
+
+	        <div class="row">
+	            <h1></h1>
+	            <a href="https://www.youtube.com/watch?v=WjrqpJQBKCQ" target="_blank"> <button class="btn" name="watch">Watch a movie</button></a>
+	        </div>
+		</div>
+
+     </div>
+
+	</div>
+  </div>
+</div>
+</body>
+</html>
