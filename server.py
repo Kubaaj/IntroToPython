@@ -280,7 +280,7 @@ def mainPageSearch():
         img1 = request.forms.get('img1')
         redirect('/movie/' + img1)
     
-
+@route('/movie/<img1>', method='POST')
 @route('/movie/<img1>')
 def movie(img1):
     loginName = checkAuth()
@@ -362,17 +362,24 @@ def movie(img1):
     conn.commit()
     conn.close()
     if IsFavourite == 1:
-        return template('Movie_false.html', movie_chosen = movie_chosen_final)   
+        return template('Movie_false.html', movie_chosen = movie_chosen_final)    
+    elif request.forms.get('favourite', default=False):
+        print("BUTTON PRESSED!!!")
+        return template('Movie_false.html', movie_chosen = movie_chosen_final) 
     else:
-        return template('Movie.html', movie_chosen = movie_chosen_final)   
+        return template('Movie.html', movie_chosen = movie_chosen_final)
+    print("BUTTON2")
 
-@route('/movie/<img1>', method='POST')
-def movie_fav(img1):
-        if request.forms.get('favourite', default=False):
-            a=0
-            print("BUTTON PRESSED!!!")
-            return template('Movie.html', movie_chosen = movie_chosen_final)    
-    
+#@route('/movie/<img1>', method='POST')
+#def movie_fav(img1):
+#    print("movie_fav")
+#    if request.forms.get('favourite', default=False):
+#        a=0
+#        print("BUTTON PRESSED!!!")
+#        return template('Movie.html', movie_chosen = movie_chosen_final) 
+#    print("BUTTON2")
+#           
+#    
 @route('/movie/search/<search_term>/<img1>')
 def movieSearch(search_term, img1):
     loginName = checkAuth()
