@@ -365,6 +365,24 @@ def movie(img1):
         return template('Movie_false.html', movie_chosen = movie_chosen_final)    
     elif request.forms.get('favourite', default=False):
         print("BUTTON PRESSED!!!")
+        conn = sqlite3.connect('jjmovie.db')
+        c = conn.cursor()
+        c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], loginName,))
+        cnt = c.fetchone()
+        print("CNT: " + str(cnt[0]))
+        c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
+        UserId = c.fetchone()
+        UserId = UserId[0]
+        print("USERID: " + str(UserId))
+        if cnt[0] > 0:
+            print("cnt>0!!!!!!!!!!!")
+            c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+        else:
+            print("cnt<=0!!!!!!!!!!")
+            c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
+        
+        conn.commit()
+        conn.close()
         return template('Movie_false.html', movie_chosen = movie_chosen_final) 
     else:
         return template('Movie.html', movie_chosen = movie_chosen_final)
