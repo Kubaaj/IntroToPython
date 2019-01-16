@@ -355,38 +355,80 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-
-    c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], loginName,))
-    IsFavourite = c.fetchone()
-               
+        
+    c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
+    UserId = c.fetchone()
+    UserId = UserId[0]
+    print("USERID: " + str(UserId))
+    c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+    cnt = c.fetchone()
+    if cnt[0] > 0:
+        c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], UserId,))
+        IsFavourite = c.fetchone()
+        IsFavourite = IsFavourite[0]
+    else:
+        IsFavourite = 0
+    print("ISINFAVOURITE: " + str(IsFavourite))  
+    c.execute("SELECT count(*) FROM Rentals WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+    cnt_rent = c.fetchone()
+    cnt_rent = cnt_rent[0]       
     conn.commit()
     conn.close()
-    if IsFavourite == 1:
-        return template('Movie_false.html', movie_chosen = movie_chosen_final)    
-    elif request.forms.get('favourite', default=False):
-        print("BUTTON PRESSED!!!")
-        conn = sqlite3.connect('jjmovie.db')
-        c = conn.cursor()
-        c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], loginName,))
-        cnt = c.fetchone()
-        print("CNT: " + str(cnt[0]))
-        c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
-        UserId = c.fetchone()
-        UserId = UserId[0]
-        print("USERID: " + str(UserId))
-        if cnt[0] > 0:
-            print("cnt>0!!!!!!!!!!!")
-            c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+    
+    if IsFavourite == 1 and cnt_rent > 0:
+        return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
+    elif IsFavourite == 1 and cnt_rent == 0:
+        if request.forms.get('buy', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor() 
+            c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
         else:
-            print("cnt<=0!!!!!!!!!!")
-            c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
-        
-        conn.commit()
-        conn.close()
-        return template('Movie_false.html', movie_chosen = movie_chosen_final) 
+            return template('Movie_liked.html', movie_chosen = movie_chosen_final) 
+    elif IsFavourite == 0 and cnt_rent > 0:
+        if request.forms.get('favourite', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            if cnt[0] > 0:
+                print("cnt>0!!!!!!!!!!!")
+                c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+            else:
+                print("cnt<=0!!!!!!!!!!")
+                c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final) 
+        else:
+            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final) 
+    
+    elif IsFavourite == 0 and cnt_rent == 0:
+        if request.forms.get('favourite', default=False):
+            print("BUTTON PRESSED!!!")
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            if cnt[0] > 0:
+                print("cnt>0!!!!!!!!!!!")
+                c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+            else:
+                print("cnt<=0!!!!!!!!!!")
+                c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_liked.html', movie_chosen = movie_chosen_final)
+        elif request.forms.get('buy', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor() 
+            c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
+        else:
+            return template('Movie.html', movie_chosen = movie_chosen_final)
     else:
         return template('Movie.html', movie_chosen = movie_chosen_final)
-    print("BUTTON2")
+    
 
 #@route('/movie/<img1>', method='POST')
 #def movie_fav(img1):
