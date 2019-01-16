@@ -120,6 +120,7 @@ def signup():
 @route('/settings')
 def settings(error = None):
     loginName = checkAuth()
+    print(loginName)
     return template('Settings.html',error = error)
 
 
@@ -131,7 +132,7 @@ def settings(error = None):
     # loginName = request.forms.get('login_name', default=False)
     # repLoginName = request.forms.get('rep_login_name', default=False)
     newPassword = request.forms.get('new_password', default=False)
-    repNewPassword = request.forms.get('rep_rep_password', default=False)
+    repNewPassword = request.forms.get('rep_new_password', default=False)
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     c.execute("SELECT Salt, Hash FROM Users WHERE Login = ?", (loginName,))
@@ -146,6 +147,8 @@ def settings(error = None):
         hash = bcrypt.hashpw(str.encode(newPassword), salt)
         c.execute("UPDATE Users SET Password = ?, Salt = ?, Hash = ? WHERE Login = ?",(newPassword,salt,hash, loginName))
         error = "Password changed succesful"
+        conn.commit()
+        conn.close()
         redirect("/index")
 
     conn.commit()
@@ -352,7 +355,7 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-    
+
     c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], loginName,))
     IsFavourite = c.fetchone()
                
@@ -392,6 +395,7 @@ def movieSearch(search_term, img1):
         ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
               ELSE 3 END) 
         END AS SearchValue 
+
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
         LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
@@ -429,6 +433,7 @@ def search(search_term):
         ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
               ELSE 3 END) 
         END AS SearchValue 
+
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
         LEFT JOIN Keywords k ON mk.KeywordId = k.KeywordId
@@ -557,13 +562,13 @@ def checkAuth():
     c.execute("SELECT CASE WHEN COUNT(*) = 1 THEN  CAST( 1 as BIT ) ELSE CAST( 0 as BIT ) END AS IsAuth FROM users WHERE Login = ? AND RandStr = ? AND LoggedIn == 1 AND LastSeen > ?  LIMIT 1", (loginName, randStr, time.time() - 3600 ))
     IsAuth = c.fetchone()[0] == 1
 
-
-    # (loginName in users) and (users[loginName].get("randStr", "") == randStr) and (users[loginName]["loggedIn"] == True) and (time.time() - users[loginName]["lastSeen"] < 3600)
     if IsAuth:
-        c.execute("UPDATE Users SET LastSeen = datetime('now') WHERE Login = ?", (loginName,))
+        c.execute("UPDATE Users SET LastSeen = ? WHERE Login = ?", (time.time(), loginName,))
         conn.commit()
         conn.close()
         return loginName
+    conn.commit()
+    conn.close()
     return redirect('/login')
 
 
