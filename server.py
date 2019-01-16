@@ -426,7 +426,6 @@ def movie(img1):
             c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
             conn.commit()
             conn.close()
-            print("BUYING")
             return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
         else:
             return template('Movie.html', movie_chosen = movie_chosen_final)
