@@ -382,8 +382,10 @@ def movie(img1):
             conn = sqlite3.connect('jjmovie.db')
             c = conn.cursor() 
             c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
             conn.commit()
             conn.close()
+            print("BUYING")
             return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
         else:
             return template('Movie_liked.html', movie_chosen = movie_chosen_final) 
@@ -421,8 +423,10 @@ def movie(img1):
             conn = sqlite3.connect('jjmovie.db')
             c = conn.cursor() 
             c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
             conn.commit()
             conn.close()
+            print("BUYING")
             return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
         else:
             return template('Movie.html', movie_chosen = movie_chosen_final)
