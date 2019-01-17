@@ -366,15 +366,28 @@ def movie(img1):
         c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], UserId,))
         IsFavourite = c.fetchone()
         IsFavourite = IsFavourite[0]
+        c.execute("SELECT Rating FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], UserId,))
+        Rating = c.fetchone()
+        Rating = Rating[0]
+        print("BEFORE RATING: " + str(Rating))
     else:
         IsFavourite = 0
     print("ISINFAVOURITE: " + str(IsFavourite))  
     c.execute("SELECT count(*) FROM Rentals WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
     cnt_rent = c.fetchone()
-    cnt_rent = cnt_rent[0]       
+    cnt_rent = cnt_rent[0] 
+    c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+
+    if request.forms.get('rate', default=False):
+        print("RATING")
+        user_answer=request.forms.get('rating')
+        print("RATE: " + str(user_answer))
+        if cnt[0] > 0:
+            c.execute("UPDATE Ratings SET Rating = ? WHERE MovieId = ? AND UserId = ?;", (user_answer, movie_chosen[0][0], UserId,))
+        else:
+            c.execute("INSERT INTO Ratings (MovieId, UserId, Rating, IsInFavourites) VALUES(?, ?, ?, 0);", (movie_chosen[0][0], UserId, user_answer,))
     conn.commit()
-    conn.close()
-    
+    conn.close()    
     if IsFavourite == 1 and cnt_rent > 0:
         return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
     elif IsFavourite == 1 and cnt_rent == 0:
