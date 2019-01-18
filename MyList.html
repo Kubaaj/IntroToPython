@@ -195,28 +195,28 @@ display: table;
 
   <div class='container'>
     <div class="container">
-      <h3> Search Results:</h3>
-      <div class="row">
-		
+      <h3> My List:</h3>
+
+
 	        %from math import *
-			%i = cnt
-            %for i in range(0,i,1):
-				%if (i+1)%6==0:
-					%print("PODZIELNE PRZEZ 2!: " + str(i))
-					</div>
-					<div class="row">
-					<div class="column">
-					<a href="../movie/myli{{i}}"><img src={{ml[i]}} ></a>
-					</div>
-				%else:
-					%print(str(i))
-					<div class="column">
-					<a href="../movie/myli{{i}}"><img src={{ml[i]}} ></a>
-					</div>    
-            %end
+
+
+          %for i in range(0,floor(cnt/6)+1,1):
+              <div class="row">
+              %for j in range(0,cnt - i*6):
+              % ind = i * 6 + j
+              <div class="column">
+              <a href="../movie/myli{{ind}}"><img src={{ml[ind]}} ></a>
+              </div>
+              %end
+      		    </div>
+      		%end
+
+
+      					</div>
+
       </div>
-    </div>
-  </div>
+
 
 </body>
 

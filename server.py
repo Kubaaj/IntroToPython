@@ -53,10 +53,9 @@ def login():
                 response.set_cookie("user", loginName, secret=secretKey)
                 response.set_cookie("randStr", randStr, secret=secretKey)
 
-                c.execute("UPDATE Users SET LastSeen = ? WHERE Login = ?", (time.time(), loginName,))
+            c.execute("UPDATE Users SET LastSeen = ? WHERE Login = ?", (time.time(), loginName,))
             c.execute("UPDATE Users SET LoggedIn = 1 WHERE Login = ?", (loginName,))
             c.execute("UPDATE Users SET RandStr = ? WHERE Login = ?", (randStr,loginName))
-            c.execute("SELECT * FROM users WHERE Login = ? LIMIT 1", (loginName, ))
 
             conn.commit()
             conn.close()
@@ -160,16 +159,16 @@ def settings(error = None):
 @route('/index')
 def main_page():
     loginName = checkAuth()
-    
+
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        CREATE VIEW BestFilms AS 
-        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
-        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL 
-        ORDER BY VoteAverage DESC, VoteCount DESC 
+        CREATE VIEW BestFilms AS
+        SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        WHERE VoteCount > 1050 AND VoteCount IS NOT NULL
+        ORDER BY VoteAverage DESC, VoteCount DESC
         LIMIT 6;
     """
     c.execute(str(sql))
@@ -192,7 +191,7 @@ def main_page():
     best6=c.fetchone()
     best6_2 = 'https://image.tmdb.org/t/p/w185' + best6[0]
     c.execute("DROP VIEW BestFilms;")
-    
+
     c.execute("SELECT p.PosterPath FROM Movies m LEFT JOIN Posters p ON m.MovieId = p.MovieId LEFT JOIN Rentals r ON m.MovieId = r.MovieId LEFT JOIN Users u ON r.UserId = u.UserId WHERE Login = ? ORDER BY date(RentalDate) DESC LIMIT 1;", (loginName,))
     rent1=c.fetchone()
     if rent1 == None:
@@ -229,16 +228,16 @@ def main_page():
         rent6_2 = "http://www.apmusicstudio.com/images/InnerImages/NoVideo.jpg"
     else:
         rent6_2 = 'https://image.tmdb.org/t/p/w185' + rent6[0]
-    
+
         conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        CREATE VIEW PopularFilms AS 
-        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
-        ORDER BY Pop DESC 
-        LIMIT 6;    
+        CREATE VIEW PopularFilms AS
+        SELECT m.MovieId, m.Title, cast(m.Popularity as int) as Pop, p.PosterPath
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        ORDER BY Pop DESC
+        LIMIT 6;
     """
     c.execute(str(sql))
     c.execute("SELECT PosterPath FROM PopularFilms LIMIT 1;")
@@ -260,7 +259,7 @@ def main_page():
     pop6=c.fetchone()
     pop6_2 = 'https://image.tmdb.org/t/p/w185' + pop6[0]
     c.execute("DROP VIEW PopularFilms;")
-    
+
     conn.commit()
     conn.close()
     return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
@@ -279,7 +278,7 @@ def mainPageSearch():
     elif request.form.get('img1', default=False):
         img1 = request.forms.get('img1')
         redirect('/movie/' + img1)
-    
+
 @route('/movie/<img1>', method='POST')
 @route('/movie/<img1>')
 def movie(img1):
@@ -297,9 +296,9 @@ def movie(img1):
         print("RENTING")
         sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
-        LEFT JOIN Rentals r ON m.MovieId = r.MovieId 
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
+        LEFT JOIN Rentals r ON m.MovieId = r.MovieId
         LEFT JOIN Users u ON r.UserId = u.UserId
         WHERE u.Login = ?
         ORDER BY date(r.RentalDate) DESC LIMIT 1 OFFSET ?;
@@ -310,13 +309,13 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-    
+
     elif typ == "best":
         print("BEST")
         sql = """
-        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
         WHERE VoteCount > 1050 AND VoteCount IS NOT NULL
         ORDER BY VoteAverage DESC, VoteCount DESC LIMIT 1 OFFSET ?;
         """
@@ -326,13 +325,13 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-        
+
     elif typ == "popl":
         print("POPULAR")
         sql = """
-        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
-        FROM Movies m 
-        LEFT JOIN Posters p ON m.MovieId = p.MovieId 
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
+        FROM Movies m
+        LEFT JOIN Posters p ON m.MovieId = p.MovieId
         ORDER BY Pop DESC LIMIT 1 OFFSET ?;
         """
         c.execute(str(sql), (num,))
@@ -345,8 +344,8 @@ def movie(img1):
     elif typ == "rect":
         print("RECENTLY_ADDED")
         sql = """
-        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
-        FROM Movies AS m LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
+        FROM Movies AS m LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         WHERE m.ReleaseDate <> "" ORDER BY ReleaseDate DESC LIMIT 1 OFFSET ?;
         """
         c.execute(str(sql), (num,))
@@ -357,10 +356,10 @@ def movie(img1):
         print(str(movie_chosen_final[0]))
     elif typ == "myli":
         sql = """
-        SELECT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        SELECT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
         FROM Ratings AS r
-        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         LEFT JOIN Users AS u ON r.UserId = u.UserId
         WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT 1 OFFSET ?;
         """
@@ -371,7 +370,7 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-        
+
     c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
     UserId = c.fetchone()
     UserId = UserId[0]
@@ -388,10 +387,10 @@ def movie(img1):
         print("BEFORE RATING: " + str(Rating))
     else:
         IsFavourite = 0
-    print("ISINFAVOURITE: " + str(IsFavourite))  
+    print("ISINFAVOURITE: " + str(IsFavourite))
     c.execute("SELECT count(*) FROM Rentals WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
     cnt_rent = c.fetchone()
-    cnt_rent = cnt_rent[0] 
+    cnt_rent = cnt_rent[0]
     c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
 
     if request.forms.get('rate', default=False):
@@ -403,13 +402,13 @@ def movie(img1):
         else:
             c.execute("INSERT INTO Ratings (MovieId, UserId, Rating, IsInFavourites) VALUES(?, ?, ?, 0);", (movie_chosen[0][0], UserId, user_answer,))
     conn.commit()
-    conn.close()    
+    conn.close()
     if IsFavourite == 1 and cnt_rent > 0:
         return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
     elif IsFavourite == 1 and cnt_rent == 0:
         if request.forms.get('buy', default=False):
             conn = sqlite3.connect('jjmovie.db')
-            c = conn.cursor() 
+            c = conn.cursor()
             c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
             c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
             conn.commit()
@@ -417,7 +416,7 @@ def movie(img1):
             print("BUYING")
             return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
         else:
-            return template('Movie_liked.html', movie_chosen = movie_chosen_final) 
+            return template('Movie_liked.html', movie_chosen = movie_chosen_final)
     elif IsFavourite == 0 and cnt_rent > 0:
         if request.forms.get('favourite', default=False):
             conn = sqlite3.connect('jjmovie.db')
@@ -430,10 +429,10 @@ def movie(img1):
                 c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
             conn.commit()
             conn.close()
-            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final) 
+            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
         else:
-            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final) 
-    
+            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
+
     elif IsFavourite == 0 and cnt_rent == 0:
         if request.forms.get('favourite', default=False):
             print("BUTTON PRESSED!!!")
@@ -450,7 +449,7 @@ def movie(img1):
             return template('Movie_liked.html', movie_chosen = movie_chosen_final)
         elif request.forms.get('buy', default=False):
             conn = sqlite3.connect('jjmovie.db')
-            c = conn.cursor() 
+            c = conn.cursor()
             c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
             c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
             conn.commit()
@@ -460,7 +459,7 @@ def movie(img1):
             return template('Movie.html', movie_chosen = movie_chosen_final)
     else:
         return template('Movie.html', movie_chosen = movie_chosen_final)
-    
+
 
 #@route('/movie/<img1>', method='POST')
 #def movie_fav(img1):
@@ -468,10 +467,10 @@ def movie(img1):
 #    if request.forms.get('favourite', default=False):
 #        a=0
 #        print("BUTTON PRESSED!!!")
-#        return template('Movie.html', movie_chosen = movie_chosen_final) 
+#        return template('Movie.html', movie_chosen = movie_chosen_final)
 #    print("BUTTON2")
-#           
-#    
+#
+#
 @route('/movie/search/<search_term>/<img1>')
 def movieSearch(search_term, img1):
     loginName = checkAuth()
@@ -489,11 +488,11 @@ def movieSearch(search_term, img1):
         print("SEARCHING")
         sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath,
-        CASE 
-        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
-        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
-              ELSE 3 END) 
-        END AS SearchValue 
+        CASE
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4
+              ELSE 3 END)
+        END AS SearchValue
 
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
@@ -514,12 +513,12 @@ def movieSearch(search_term, img1):
         print(str(movie_chosen_final[0]))
     conn.commit()
     conn.close()
-    return template('Movie.html', movie_chosen = movie_chosen_final)  
+    return template('Movie.html', movie_chosen = movie_chosen_final)
 
 @route('/search/<search_term>')
 def search(search_term):
     loginName = checkAuth()
-    
+
     #form = cgi.FieldStorage()
     #searchString =  form.getvalue('searchbox')
     searchString = search_term.upper()
@@ -527,11 +526,11 @@ def search(search_term):
     c = conn.cursor()
     sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Popularity, m.VoteAverage, p.PosterPath,
-        CASE 
-        WHEN INSTR(UPPER(m.Title), ?) THEN 5 
-        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4 
-              ELSE 3 END) 
-        END AS SearchValue 
+        CASE
+        WHEN INSTR(UPPER(m.Title), ?) THEN 5
+        ELSE (CASE WHEN INSTR(UPPER(k.Keyword), ?) THEN 4
+              ELSE 3 END)
+        END AS SearchValue
 
         FROM Movies m
         LEFT JOIN MoviesKeywords mk ON m.MovieId = mk.MovieId
@@ -629,13 +628,13 @@ def reset():
 @route('/recently_added')
 def recently_added():
     loginName = checkAuth()
-    
+
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath 
-        FROM Movies AS m 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath
+        FROM Movies AS m
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         WHERE m.ReleaseDate <> "" ORDER BY ReleaseDate DESC LIMIT 20
     """
     c.execute(str(sql))
@@ -654,10 +653,10 @@ def myList():
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     sql = """
-        SELECT count(*) 
+        SELECT count(*)
         FROM Ratings AS r
-        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         LEFT JOIN Users AS u ON r.UserId = u.UserId
         WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT 20
     """
@@ -666,10 +665,10 @@ def myList():
     cnt_my_list = cnt_my_list[0]
     print("CNT_MY_LIST: " + str(cnt_my_list))
     sql2 = """
-        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath 
+        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath
         FROM Ratings AS r
-        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         LEFT JOIN Users AS u ON r.UserId = u.UserId
         WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT ?;
     """
