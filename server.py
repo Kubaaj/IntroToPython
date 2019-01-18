@@ -355,6 +355,22 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
+    elif typ == "myli":
+        sql = """
+        SELECT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        FROM Ratings AS r
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Users AS u ON r.UserId = u.UserId
+        WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT 1 OFFSET ?;
+        """
+        num = int(num)+1
+        c.execute(str(sql), (loginName, num,))
+        movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
         
     c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
     UserId = c.fetchone()
@@ -363,10 +379,10 @@ def movie(img1):
     c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
     cnt = c.fetchone()
     if cnt[0] > 0:
-        c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], UserId,))
+        c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
         IsFavourite = c.fetchone()
         IsFavourite = IsFavourite[0]
-        c.execute("SELECT Rating FROM Ratings WHERE MovieId = ? and UserId = ? AND IsInFavourites = 1;", (movie_chosen[0][0], UserId,))
+        c.execute("SELECT Rating FROM Ratings WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
         Rating = c.fetchone()
         Rating = Rating[0]
         print("BEFORE RATING: " + str(Rating))
@@ -632,6 +648,40 @@ def recently_added():
     conn.close()
     return template('RecentlyAdded.html', r2=recent2)
 
+@route('/my_list')
+def myList():
+    loginName = checkAuth()
+    conn = sqlite3.connect('jjmovie.db')
+    c = conn.cursor()
+    sql = """
+        SELECT count(*) 
+        FROM Ratings AS r
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Users AS u ON r.UserId = u.UserId
+        WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT 20
+    """
+    c.execute(str(sql), (loginName, ))
+    cnt_my_list = c.fetchone()
+    cnt_my_list = cnt_my_list[0]
+    print("CNT_MY_LIST: " + str(cnt_my_list))
+    sql2 = """
+        SELECT m.MovieId, m.Title, m.ReleaseDate, p.PosterPath 
+        FROM Ratings AS r
+        LEFT JOIN Movies AS m ON r.MovieId = m.MovieId 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        LEFT JOIN Users AS u ON r.UserId = u.UserId
+        WHERE u.Login = ? AND r.IsInFavourites = 1 ORDER BY VoteAverage DESC LIMIT ?;
+    """
+    c.execute(str(sql2), (loginName, cnt_my_list, ))
+    my_list=c.fetchall()
+    my_list2 = [None] * cnt_my_list
+    for i in range(cnt_my_list):
+        my_list2[i] = 'https://image.tmdb.org/t/p/w185' + str(my_list[i][3])
+
+    conn.commit()
+    conn.close()
+    return template('MyList.html', ml=my_list2, cnt = cnt_my_list)
 
 def checkAuth():
     loginName = request.get_cookie("user", secret=secretKey)
