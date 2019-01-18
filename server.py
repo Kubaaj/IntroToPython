@@ -9,6 +9,10 @@ import sqlite3
 import cgi
 import bcrypt
 import emailing
+import recommendation_engine
+REC = recommendation_engine.Engine()
+
+
 
 secretKey = "SDMDSIUDSFYODS&TTFS987f9ds7f8sd6DFOUFYWE&FY"
 log = logging.getLogger('bottle')
@@ -160,8 +164,15 @@ def settings(error = None):
 def main_page():
     loginName = checkAuth()
 
+
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
+    c.execute("SELECT UserId FROM Users WHERE Login = ? LIMIT 1",(loginName,))
+    UserId = c.fetchone()[0]
+    rec_working = REC.generate_recommendations(UserId)
+    recommendations = REC.get_top_n(6)
+    print(recommendations)
+
     sql = """
         CREATE VIEW BestFilms AS
         SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath
@@ -698,6 +709,7 @@ def checkAuth():
         c.execute("UPDATE Users SET LastSeen = ? WHERE Login = ?", (time.time(), loginName,))
         conn.commit()
         conn.close()
+
         return loginName
     conn.commit()
     conn.close()
