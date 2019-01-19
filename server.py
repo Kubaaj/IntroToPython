@@ -110,7 +110,9 @@ def signup():
     else:
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(str.encode(password), salt)
-        c.execute("INSERT INTO users (Login, Password, LoggedIn, RandStr, LastSeen, Salt, Hash) VALUES (?,?,0,null,0,?,?)",(loginName, password,salt,hash))
+        c.execute("SELECT MAX(UserId) FROM Users")
+        MaxUserId = c.fetchone()[0]+1
+        c.execute("INSERT INTO users (UserId,Login, Password, LoggedIn, RandStr, LastSeen, Salt, Hash) VALUES (?,?,?,0,null,0,?,?)",(MaxUserId,loginName, password,salt,hash))
         conn.commit()
         conn.close()
 
@@ -169,24 +171,24 @@ def main_page():
     UserId = c.fetchone()[0]
     rec_working = REC.generate_recommendations(UserId)
     recommendations = REC.get_top_n(6)
-    print("RECOMMENDATIONS: " + str(recommendations[0]))
-    recommendations = (862, 524, 11, 36357, 10497, 21352)
-    print("RECOMMENDATIONS2: " + str(recommendations))
+    print("RECOMMENDATIONS: " + str(recommendations))
+
     #placeholder= '?'
     #placeholders= ', '.join(placeholder for _ in recommendations)
     sql = """
-        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
-        FROM Movies AS m 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
-        WHERE m.MovieId IN (?, ?, ?, ?, ?, ?)
-    """ 
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
+        FROM Movies AS m
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
+        WHERE m.MovieId IN {}
+    """
     #% placeholders
-    c.execute(str(sql), (recommendations[0],recommendations[1],recommendations[2],recommendations[3],recommendations[4],recommendations[5],))
+    c.execute(sql.format(str(recommendations)))
     reco=c.fetchall()
+    print(reco)
     reco2 = [None] * 6
     for i in range(6):
+
         reco2[i] = 'https://image.tmdb.org/t/p/w185' + str(reco[i][7])
-        print(reco2[i])
 
     sql2 = """
         CREATE VIEW BestFilms AS
@@ -380,7 +382,7 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-    
+
     elif typ == "myli":
         sql = """
         SELECT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
@@ -397,18 +399,18 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
-    
+
     elif typ == "reco":
         recommendations = REC.get_top_n(6)
         print("RECOMMENDATIONS: " + str(recommendations[0]))
         recommendations = (862, 524, 11, 36357, 10497, 21352)
         print("RECOMMENDATIONS2: " + str(recommendations))
         sql = """
-        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
-        FROM Movies AS m 
-        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
+        FROM Movies AS m
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
         WHERE m.MovieId IN (?, ?, ?, ?, ?, ?) LIMIT 1 OFFSET ?;
-        """ 
+        """
         #% placeholders
         print(recommendations)
         c.execute(str(sql), (recommendations[0],recommendations[1],recommendations[2],recommendations[3],recommendations[4],recommendations[5],num,))
