@@ -163,17 +163,32 @@ def settings(error = None):
 @route('/index')
 def main_page():
     loginName = checkAuth()
-
-
     conn = sqlite3.connect('jjmovie.db')
     c = conn.cursor()
     c.execute("SELECT UserId FROM Users WHERE Login = ? LIMIT 1",(loginName,))
     UserId = c.fetchone()[0]
     rec_working = REC.generate_recommendations(UserId)
     recommendations = REC.get_top_n(6)
-    print(recommendations)
-
+    print("RECOMMENDATIONS: " + str(recommendations[0]))
+    recommendations = (862, 524, 11, 36357, 10497, 21352)
+    print("RECOMMENDATIONS2: " + str(recommendations))
+    #placeholder= '?'
+    #placeholders= ', '.join(placeholder for _ in recommendations)
     sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        FROM Movies AS m 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        WHERE m.MovieId IN (?, ?, ?, ?, ?, ?)
+    """ 
+    #% placeholders
+    c.execute(str(sql), (recommendations[0],recommendations[1],recommendations[2],recommendations[3],recommendations[4],recommendations[5],))
+    reco=c.fetchall()
+    reco2 = [None] * 6
+    for i in range(6):
+        reco2[i] = 'https://image.tmdb.org/t/p/w185' + str(reco[i][7])
+        print(reco2[i])
+
+    sql2 = """
         CREATE VIEW BestFilms AS
         SELECT m.MovieId, m.Title, m.VoteAverage, m.VoteCount, p.PosterPath
         FROM Movies m
@@ -182,7 +197,7 @@ def main_page():
         ORDER BY VoteAverage DESC, VoteCount DESC
         LIMIT 6;
     """
-    c.execute(str(sql))
+    c.execute(str(sql2))
     c.execute("SELECT PosterPath FROM BestFilms LIMIT 1;")
     best1=c.fetchone()
     best1_2 = 'https://image.tmdb.org/t/p/w185' + best1[0]
@@ -273,7 +288,7 @@ def main_page():
 
     conn.commit()
     conn.close()
-    return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2)
+    return template('MainPage.html',username = loginName, best1 = best1_2, best2 = best2_2, best3 = best3_2, best4 = best4_2, best5 = best5_2, best6 = best6_2, rent1 = rent1_2, rent2 = rent2_2, rent3 = rent3_2, rent4 = rent4_2, rent5 = rent5_2, rent6 = rent6_2, pop1 = pop1_2, pop2 = pop2_2, pop3 = pop3_2, pop4 = pop4_2, pop5 = pop5_2, pop6 = pop6_2, reco = reco2)
 
     request.forms.get('search_term')
     request.forms.get('img1')
@@ -365,6 +380,7 @@ def movie(img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
+    
     elif typ == "myli":
         sql = """
         SELECT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
@@ -377,6 +393,26 @@ def movie(img1):
         num = int(num)+1
         c.execute(str(sql), (loginName, num,))
         movie_chosen = c.fetchall()
+        path = str(movie_chosen[0][7])
+        whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
+        movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
+        print(str(movie_chosen_final[0]))
+    
+    elif typ == "reco":
+        recommendations = REC.get_top_n(6)
+        print("RECOMMENDATIONS: " + str(recommendations[0]))
+        recommendations = (862, 524, 11, 36357, 10497, 21352)
+        print("RECOMMENDATIONS2: " + str(recommendations))
+        sql = """
+        SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop 
+        FROM Movies AS m 
+        LEFT JOIN Posters AS p ON m.MovieId = p.MovieId 
+        WHERE m.MovieId IN (?, ?, ?, ?, ?, ?) LIMIT 1 OFFSET ?;
+        """ 
+        #% placeholders
+        print(recommendations)
+        c.execute(str(sql), (recommendations[0],recommendations[1],recommendations[2],recommendations[3],recommendations[4],recommendations[5],num,))
+        movie_chosen=c.fetchall()
         path = str(movie_chosen[0][7])
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
@@ -482,6 +518,7 @@ def movie(img1):
 #    print("BUTTON2")
 #
 #
+@route('/movie/search/<search_term>/<img1>', method='POST')
 @route('/movie/search/<search_term>/<img1>')
 def movieSearch(search_term, img1):
     loginName = checkAuth()
@@ -522,8 +559,95 @@ def movieSearch(search_term, img1):
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
         movie_chosen_final = [(movie_chosen[0][0],movie_chosen[0][1],movie_chosen[0][2],movie_chosen[0][3],movie_chosen[0][4],movie_chosen[0][5],movie_chosen[0][6],whole_path)]
         print(str(movie_chosen_final[0]))
+
+    c.execute("SELECT UserId FROM Users WHERE Login = ?;", (loginName,))
+    UserId = c.fetchone()
+    UserId = UserId[0]
+    print("USERID: " + str(UserId))
+    c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+    cnt = c.fetchone()
+    if cnt[0] > 0:
+        c.execute("SELECT IsInFavourites FROM Ratings WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+        IsFavourite = c.fetchone()
+        IsFavourite = IsFavourite[0]
+        c.execute("SELECT Rating FROM Ratings WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+        Rating = c.fetchone()
+        Rating = Rating[0]
+        print("BEFORE RATING: " + str(Rating))
+    else:
+        IsFavourite = 0
+    print("ISINFAVOURITE: " + str(IsFavourite))
+    c.execute("SELECT count(*) FROM Rentals WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+    cnt_rent = c.fetchone()
+    cnt_rent = cnt_rent[0]
+    c.execute("SELECT count(*) FROM Ratings WHERE MovieId = ? AND UserId = ?;", (movie_chosen[0][0], UserId,))
+
+    if request.forms.get('rate', default=False):
+        print("RATING")
+        user_answer=request.forms.get('rating')
+        print("RATE: " + str(user_answer))
+        if cnt[0] > 0:
+            c.execute("UPDATE Ratings SET Rating = ? WHERE MovieId = ? AND UserId = ?;", (user_answer, movie_chosen[0][0], UserId,))
+        else:
+            c.execute("INSERT INTO Ratings (MovieId, UserId, Rating, IsInFavourites) VALUES(?, ?, ?, 0);", (movie_chosen[0][0], UserId, user_answer,))
     conn.commit()
     conn.close()
+    if IsFavourite == 1 and cnt_rent > 0:
+        return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
+    elif IsFavourite == 1 and cnt_rent == 0:
+        if request.forms.get('buy', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            print("BUYING")
+            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
+        else:
+            return template('Movie_liked.html', movie_chosen = movie_chosen_final)
+    elif IsFavourite == 0 and cnt_rent > 0:
+        if request.forms.get('favourite', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            if cnt[0] > 0:
+                print("cnt>0!!!!!!!!!!!")
+                c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+            else:
+                print("cnt<=0!!!!!!!!!!")
+                c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_liked_and_rented.html', movie_chosen = movie_chosen_final)
+        else:
+            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
+
+    elif IsFavourite == 0 and cnt_rent == 0:
+        if request.forms.get('favourite', default=False):
+            print("BUTTON PRESSED!!!")
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            if cnt[0] > 0:
+                print("cnt>0!!!!!!!!!!!")
+                c.execute("UPDATE Ratings SET IsInFavourites=1 WHERE MovieId = ? and UserId = ?;", (movie_chosen[0][0], UserId,))
+            else:
+                print("cnt<=0!!!!!!!!!!")
+                c.execute("INSERT INTO Ratings (MovieId, UserId, IsInFavourites) VALUES (?, ?, 1);", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_liked.html', movie_chosen = movie_chosen_final)
+        elif request.forms.get('buy', default=False):
+            conn = sqlite3.connect('jjmovie.db')
+            c = conn.cursor()
+            c.execute("UPDATE Users SET Budget = cast(cast(Budget as real) - ? as real) WHERE UserId = ?;", (movie_chosen[0][2], UserId,))
+            c.execute("INSERT INTO Rentals(MovieId, UserId, RentalDate) VALUES(?, ?, date('now'));", (movie_chosen[0][0], UserId,))
+            conn.commit()
+            conn.close()
+            return template('Movie_rented_and_not_liked.html', movie_chosen = movie_chosen_final)
+        else:
+            return template('Movie.html', movie_chosen = movie_chosen_final)
+    else:
+        return template('Movie.html', movie_chosen = movie_chosen_final)
     return template('Movie.html', movie_chosen = movie_chosen_final)
 
 @route('/search/<search_term>')
