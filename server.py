@@ -402,18 +402,16 @@ def movie(img1):
 
     elif typ == "reco":
         recommendations = REC.get_top_n(6)
-        print("RECOMMENDATIONS: " + str(recommendations[0]))
-        recommendations = (862, 524, 11, 36357, 10497, 21352)
-        print("RECOMMENDATIONS2: " + str(recommendations))
+
         sql = """
         SELECT DISTINCT m.MovieId, m.Title, m.Price, m.ReleaseDate, m.Runtime, m.VoteAverage, m.VoteCount, p.PosterPath, cast(m.Popularity as int) as Pop
         FROM Movies AS m
         LEFT JOIN Posters AS p ON m.MovieId = p.MovieId
-        WHERE m.MovieId IN (?, ?, ?, ?, ?, ?) LIMIT 1 OFFSET ?;
+        WHERE m.MovieId IN {} LIMIT 1 OFFSET ?;
         """
         #% placeholders
-        print(recommendations)
-        c.execute(str(sql), (recommendations[0],recommendations[1],recommendations[2],recommendations[3],recommendations[4],recommendations[5],num,))
+
+        c.execute(sql.format(str(recommendations)), (num,))
         movie_chosen=c.fetchall()
         path = str(movie_chosen[0][7])
         whole_path = 'https://image.tmdb.org/t/p/w185' + str(path)
