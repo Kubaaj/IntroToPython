@@ -187,7 +187,6 @@ def main_page():
     print(reco)
     reco2 = [None] * 6
     for i in range(6):
-
         reco2[i] = 'https://image.tmdb.org/t/p/w185' + str(reco[i][7])
 
     sql2 = """
@@ -506,18 +505,13 @@ def movie(img1):
             return template('Movie.html', movie_chosen = movie_chosen_final)
     else:
         return template('Movie.html', movie_chosen = movie_chosen_final)
+ 
+@route('/movie/<img1>', method='POST')
+def movie_search(img1):
+    if request.forms.get('search_term', default=False):
+        search_term = request.forms.get('search_term')
+        redirect('/search/' + search_term)
 
-
-#@route('/movie/<img1>', method='POST')
-#def movie_fav(img1):
-#    print("movie_fav")
-#    if request.forms.get('favourite', default=False):
-#        a=0
-#        print("BUTTON PRESSED!!!")
-#        return template('Movie.html', movie_chosen = movie_chosen_final)
-#    print("BUTTON2")
-#
-#
 @route('/movie/search/<search_term>/<img1>', method='POST')
 @route('/movie/search/<search_term>/<img1>')
 def movieSearch(search_term, img1):
@@ -650,6 +644,13 @@ def movieSearch(search_term, img1):
         return template('Movie.html', movie_chosen = movie_chosen_final)
     return template('Movie.html', movie_chosen = movie_chosen_final)
 
+@route('/movie/search/<search_term>/<img1>', method='POST')
+def movie_search_next(search_term, img1):
+    if request.forms.get('search_term', default=False):
+        search_term = request.forms.get('search_term')
+        redirect('/search/' + search_term)
+        
+        
 @route('/search/<search_term>')
 def search(search_term):
     loginName = checkAuth()
@@ -781,7 +782,13 @@ def recently_added():
     conn.commit()
     conn.close()
     return template('RecentlyAdded.html', r2=recent2)
-
+    
+    
+@route('/recently_added', method='POST')
+def recently_added_search():
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
+        
 @route('/my_list')
 def myList():
     loginName = checkAuth()
@@ -817,6 +824,11 @@ def myList():
     conn.close()
     return template('MyList.html', ml=my_list2, cnt = cnt_my_list)
 
+@route('/my_list', method='POST')
+def my_list_search():
+    search_term = request.forms.get('search_term')
+    redirect('/search/' + search_term)
+    
 def checkAuth():
     loginName = request.get_cookie("user", secret=secretKey)
     randStr = request.get_cookie("randStr", secret=secretKey)
