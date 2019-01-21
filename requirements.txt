@@ -5,4 +5,4 @@ lightfm==1.15
 pandas==0.23.4
 scipy==1.0.0
 numpy==1.14.2
-sqlite=3.22.0
+sqlite==3.22.0
