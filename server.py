@@ -10,6 +10,7 @@ import cgi
 import bcrypt
 import emailing
 import recommendation_engine
+import os
 REC = recommendation_engine.Engine()
 
 
