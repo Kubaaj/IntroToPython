@@ -227,19 +227,16 @@ display: table;
 
 
   <div class="topnav">
-    <a class="active" href="#home">Home</a>
-    <a href="#recent">Recently Added</a>
-    <a href="#recent">My List</a>
-	<form class= "search_form" method = "POST">
-    <input type="text" placeholder="Search..." name="search_term">
-	<input type="submit" value="GO!" name="search_button">
-	</form>
+    <a href="../index">Home</a>
+    <a href="../recently_added">Recently Added</a>
+    <a href="../my_list">My List</a>
+
     <div class="dropdown">
       <button class="dropbtn">Account &#x25BE;
         <i class="fa fa-caret-down"></i>
       </button>
       <div class="dropdown-content">
-        <a href="/settings">Settings</a>
+        <a class = "active" href="/settings">Settings</a>
         <a href="/signout">Sign Out</a>
       </div>
 
@@ -249,7 +246,7 @@ display: table;
   <div class="change_form">
     <form class="change_form" method = POST>
       <div class="container">
-        <h2>Sign Up</h2>
+        <h2>Password change</h2>
 
         % if error:
         <div class="error" style=background-color:#ff9900>
@@ -267,7 +264,7 @@ display: table;
         <input type="password" placeholder="Repeat New Password" name="rep_new_password" required>
 
 
-        <button type="submit">Sign Up</button>
+        <button type="submit">Submit</button>
 
       </div>
      </form>
